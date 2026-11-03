@@ -1,0 +1,15 @@
+{
+  "name": "watchtower",
+  "private": true,
+  "description": "The addon control centre: a menu-bar app showing releases, the daily data pull requests, store pages and test zips. Read, plus harmless actions.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "check": "bash scripts/check.sh",
+    "test": "bun test server"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.0",
+    "typescript": "^5.9.0"
+  }
+}
