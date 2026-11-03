@@ -27,7 +27,7 @@ export function Switch({ on, onChange, label, disabled }: { on: boolean; onChang
 }
 
 /** A page's title and what it is for. Ravenpost's own. */
-export function PageHeader({ title, intro, action }: { title: string; intro?: string; action?: ReactNode }) {
+export function PageHeader({ title, intro, action }: { title: ReactNode; intro?: string; action?: ReactNode }) {
   return (
     <header className="flex items-start justify-between gap-6">
       <div className="min-w-0">

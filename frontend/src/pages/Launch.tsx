@@ -1,7 +1,7 @@
 import { ClipboardCopy, X } from "lucide-react";
 import { useState } from "react";
 import { NavLink } from "@/components/Row";
-import { Dot, Panel, Reasons, Switch, useNow } from "@/components/ui";
+import { Dot, PageHeader, Panel, Reasons, Switch, useNow } from "@/components/ui";
 import { call, useApp, type Dict, type Light } from "@/lib/api";
 import { ago, hhmm, when } from "@/lib/format";
 import { num } from "@/lib/queue";
@@ -40,7 +40,7 @@ function Clock({ launch, serverNow }: { launch: string; serverNow: number }) {
   return (
     <div>
       <p className="title text-[34px] leading-none tabular-nums">{`T${s < 0 ? "−" : "+"}${days ? `${days}d ` : ""}${days ? p(h) : h}:${p(Math.floor((a % 3600) / 60))}:${p(a % 60)}`}</p>
-      <p className="mt-1.5 text-sm text-faint">Forever launches {when(launch)}</p>
+      <p className="mt-1.5 text-sm text-faint">{when(launch)} on this computer</p>
     </div>
   );
 }
@@ -52,23 +52,31 @@ function Band({ L, onRefresh }: { L: Dict; onRefresh: () => void }) {
   const red = lights.filter((l) => l === "red").length;
   const amber = lights.filter((l) => l === "amber").length;
   const word = (n: number, what: string) => `${num(n)} ${n === 1 ? "thing" : "things"} ${what}`;
+  const at = (_: string, o: Intl.DateTimeFormatOptions) => new Date(L.launch).toLocaleString("en-GB", { timeZone: "Europe/Paris", ...o });
   const title = L.overall === "green" ? "Everything Watchtower can check is ready." : L.overall === "grey" ? "Watchtower is still reading." : cap(red ? `${word(red, "to fix")} before launch.` : `${word(amber, "to check")} before launch.`);
   return (
-    <section className="panel flex flex-wrap items-center gap-x-8 gap-y-4 p-5">
-      <Clock launch={L.launch} serverNow={s.now} />
-      <div className="min-w-0 flex-1 basis-64">
-        <h1 className="title flex items-center gap-2.5 text-xl leading-tight">
-          <Dot light={L.overall} />
-          {title}
-        </h1>
-        <p className="mt-1 text-sm text-faint select-text">
-          Forever is pinned to {L.build.pin ?? "an unknown build"}, wago.tools has {L.build.latest ?? "an unknown build"}, and our TOC files say {L.build.toc}.
+    <>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3">
+            <Dot light={L.overall} className="mt-0.5" />
+            {title}
+          </span>
+        }
+        intro={`Forever launches on ${at("weekday", { weekday: "long" })} at ${at("time", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}, Central European Time.`}
+        action={
+          <button type="button" className="btn btn-gold shrink-0" onClick={onRefresh} disabled={s.busy.length > 0}>
+            {s.busy.length ? `Reading ${s.busy[0]}…` : "Read everything again"}
+          </button>
+        }
+      />
+      <section className="panel flex flex-wrap items-center justify-between gap-x-10 gap-y-3 p-5">
+        <Clock launch={L.launch} serverNow={s.now} />
+        <p className="max-w-xs text-sm text-faint select-text">
+          Forever is pinned to {L.build.pin ?? "an unknown build"}. wago.tools has {L.build.latest ?? "an unknown build"}. Our TOC files say {L.build.toc}.
         </p>
-      </div>
-      <button type="button" className="btn btn-gold" onClick={onRefresh} disabled={s.busy.length > 0}>
-        {s.busy.length ? `Reading ${s.busy[0]}…` : "Read everything again"}
-      </button>
-    </section>
+      </section>
+    </>
   );
 }
 
