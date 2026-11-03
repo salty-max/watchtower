@@ -69,16 +69,16 @@ export const interfaceFor = (build: string): number => {
 };
 
 export function buildLight(b: Build | undefined, toc: number): Verdict {
-  if (!b) return { light: "amber", reasons: ["wago.tools was not read"] };
+  if (!b) return { light: "amber", reasons: ["Watchtower could not read wago.tools."] };
   const fam = (v: string) => v.split(".").slice(0, 3).join(".");
   const reasons: string[] = [];
   const latestInterface = interfaceFor(b.latest);
   if (latestInterface !== toc) {
-    reasons.push(`wago.tools has ${fam(b.latest)}: its interface is ${latestInterface}, our TOCs say ${toc}`);
+    reasons.push(`wago.tools has ${fam(b.latest)}, whose interface number is ${latestInterface}. Our TOC files say ${toc}, so they need updating.`);
     return { light: "red", reasons };
   }
   if (b.latest !== b.pin) {
-    reasons.push(`a newer build, ${b.latest} (pinned ${b.pin}): the pins job carries it at 04:17 UTC`);
+    reasons.push(`Forever has a newer build, ${b.latest}. The pinned build is ${b.pin}. The pins job picks it up at 04:17 UTC.`);
     return { light: "amber", reasons };
   }
   return { light: "green", reasons: [] };
@@ -95,21 +95,21 @@ export function chain(repos: RepoState[], now: number, chainCheckAt: number): Ve
     // (gh gave nothing for it: the runs are unknown, not fine)
     if (!r.runs && !r.prs) {
       light = worst(light, "grey");
-      reasons.push(`${r.name}: runs not read (gh)`);
+      reasons.push(`Watchtower could not read the runs for ${r.name}.`);
       continue;
     }
     for (const run of r.runs ?? []) {
       if (run.status !== "completed") {
         light = worst(light, "amber");
-        reasons.push(`${r.name}: ${run.workflow} is running`);
+        reasons.push(`${r.name} has a ${run.workflow} run in progress.`);
       } else if (!["success", "skipped", "cancelled"].includes(run.conclusion)) {
         light = worst(light, "red");
-        reasons.push(`${r.name}: ${run.workflow} ${run.conclusion}`);
+        reasons.push(`${r.name} has a failed ${run.workflow} run (${run.conclusion}).`);
       }
     }
     for (const pr of r.prs ?? []) {
       light = worst(light, now > chainCheckAt ? "red" : "amber");
-      reasons.push(`${r.name}: #${pr.number} ${pr.title} is waiting`);
+      reasons.push(`${r.name} has pull request #${pr.number} (${pr.title}) waiting to be merged.`);
     }
   }
   return { light, reasons };
@@ -124,10 +124,10 @@ export function infra(probes: Probe[]): Verdict {
   for (const p of probes) {
     if (p.error || p.status === 0 || p.status >= 500) {
       light = "red";
-      reasons.push(`${p.name}: ${p.error ?? `HTTP ${p.status}`}`);
+      reasons.push(p.error ? `${p.name} did not answer: ${p.error}.` : `${p.name} answered with an error (HTTP ${p.status}).`);
     } else if (p.ms > 3000 || p.status >= 400) {
       light = worst(light, "amber");
-      reasons.push(`${p.name}: ${p.status >= 400 ? `HTTP ${p.status}` : `slow, ${p.ms} ms`}`);
+      reasons.push(p.status >= 400 ? `${p.name} answered with an error (HTTP ${p.status}).` : `${p.name} is slow (${p.ms} ms).`);
     }
   }
   return { light, reasons };
@@ -145,10 +145,10 @@ export function board(cards: Card[], launchRepos: Set<string>): Verdict {
     if (!touches) continue;
     if (c.status === "blocked") {
       light = worst(light, "red");
-      reasons.push(`${c.title}: blocked`);
+      reasons.push(`${c.title} is blocked.`);
     } else if (c.status !== "ready-to-push") {
       light = worst(light, "amber");
-      reasons.push(`${c.title}: ${c.status}`);
+      reasons.push(`${c.title} is ${({ "waiting-test": "waiting for a test", "waiting-review": "waiting for a review", "ready-to-push": "ready to push", running: "being worked on" } as Record<string, string>)[c.status] ?? c.status}.`);
     }
   }
   return { light, reasons };
@@ -160,16 +160,17 @@ export type Note = { id: string; at: string; addon: string; severity: Severity; 
 export type State = {
   ticks: Ticks;
   steps: Record<string, boolean>;
-  answers: Record<string, { done: boolean; text: string }>;
   notes: Note[];
 };
 
-export const emptyState = (): State => ({ ticks: {}, steps: {}, answers: {}, notes: [] });
+export const emptyState = (): State => ({ ticks: {}, steps: {}, notes: [] });
 
 export function readState(file: string): State {
   try {
     if (!existsSync(file)) return emptyState();
-    return { ...emptyState(), ...JSON.parse(readFileSync(file, "utf8")) };
+    // (a night saved before the open questions went has their answers: they are dropped here and with the next save)
+    const { answers: _answers, ...saved } = JSON.parse(readFileSync(file, "utf8"));
+    return { ...emptyState(), ...saved };
   } catch {
     return emptyState();
   }
@@ -205,12 +206,6 @@ export function apply(state: State, change: Record<string, unknown>, now = new D
       else delete next.steps[id];
       return next;
     }
-    case "answer": {
-      const id = str(change.id, 80);
-      if (!id || typeof change.done !== "boolean") return "answer: an id and done";
-      next.answers[id] = { done: change.done, text: str(change.text, 1000) ?? "" };
-      return next;
-    }
     case "note": {
       const text = str(change.text)?.trim();
       const addon = str(change.addon, 80);
@@ -230,7 +225,7 @@ export function apply(state: State, change: Record<string, unknown>, now = new D
 }
 
 // ── the night as Markdown, for the morning's session ────────────────────────
-type Content = { addons: { id: string; name: string; checks: { id: string; look: string; todo: string; fix: string }[] }[]; questions: { id: string; title: string }[] };
+type Content = { addons: { id: string; name: string; checks: { id: string; look: string; todo: string; fix: string }[] }[] };
 
 export function notesMarkdown(state: State, content: Content): string {
   const out: string[] = ["# Launch night", ""];
@@ -241,11 +236,6 @@ export function notesMarkdown(state: State, content: Content): string {
   out.push("", "## Notes", "");
   if (!state.notes.length) out.push("None written.");
   for (const n of state.notes) out.push(`- [${n.severity}] **${n.addon}** ${n.at.slice(11, 16)}Z: ${n.text}${n.shot ? ` (screenshot: ${n.shot})` : ""}`);
-  out.push("", "## Open questions", "");
-  for (const q of content.questions) {
-    const a = state.answers[q.id];
-    out.push(`- ${a?.done ? "[x]" : "[ ]"} ${q.title}${a?.text ? `: ${a.text}` : ""}`);
-  }
   const untested = content.addons.filter((a) => a.checks.some((c) => !state.ticks[`${a.id}/${c.id}`]));
   out.push("", "## Not fully tested", "");
   out.push(untested.length ? untested.map((a) => a.name).join(", ") : "Every check ticked.");

@@ -100,9 +100,8 @@ describe("changes from the page are checked, never trusted", () => {
     expect(s.notes[0].shot).toBe("a.png");
     expect((r.apply(s, { op: "drop", id: s.notes[0].id }) as r.State).notes).toEqual([]);
   });
-  test("steps, answers, and an unknown op", () => {
+  test("steps, and an unknown op", () => {
     expect((r.apply(s0, { op: "step", id: "t", done: true }) as r.State).steps).toEqual({ t: true });
-    expect((r.apply(s0, { op: "answer", id: "q", done: true, text: "1.60.1" }) as r.State).answers.q).toEqual({ done: true, text: "1.60.1" });
     expect(typeof r.apply(s0, { op: "rm -rf" })).toBe("string");
   });
   test("the state file survives a restart, and a broken file is an empty state", () => {
@@ -158,7 +157,7 @@ describe("the content and the view", () => {
     c.status = { ...c.status, error: "gave up after 180 s" };
     const v = launchView(content, c, r.emptyState(), [], at);
     expect(v.sources.light).toBe("amber");
-    expect(v.sources.reasons).toEqual(["status failed: gave up after 180 s"]);
+    expect(v.sources.reasons).toEqual(["Watchtower could not read the repositories' state: gave up after 180 s"]);
     expect(v.overall).not.toBe("green");
   });
   test("a status answer with no runs or pull requests (gh failed) draws", () => {
@@ -172,6 +171,22 @@ describe("the content and the view", () => {
     const dir = mkdtempSync(join(tmpdir(), "wt-shots-"));
     expect(screenshots(0, dir)).toEqual([]);
     expect(() => screenshots(0, join(dir, "nope"))).toThrow("iCloud Drive's root");
+  });
+});
+
+describe("the open questions are gone", () => {
+  test("the night's notes have no questions section, and the checklist carries none", () => {
+    const content = loadContent();
+    const md = r.notesMarkdown(r.emptyState(), content as never);
+    expect(md).not.toContain("Open questions");
+    expect("questions" in (content as object)).toBe(false);
+  });
+  test("a night saved before they went loses their answers on reading", () => {
+    const f = join(mkdtempSync(join(tmpdir(), "wt-")), "night.json");
+    writeFileSync(f, JSON.stringify({ ticks: { "yonder/tab": "ok" }, steps: {}, answers: { q: { done: true, text: "x" } }, notes: [] }));
+    const st = r.readState(f) as unknown as Record<string, unknown>;
+    expect(st.ticks).toEqual({ "yonder/tab": "ok" });
+    expect("answers" in st).toBe(false);
   });
 });
 
@@ -199,11 +214,11 @@ describe("the ticks and notes file", () => {
   test("a night saved by launch.ts (addon-kit/.cache) moves over the first time, and never over a newer file", () => {
     const h = home();
     const legacy = join(h, "legacy.json");
-    writeFileSync(legacy, JSON.stringify({ ticks: { "yonder/tab": "ok" }, steps: {}, answers: {}, notes: [] }));
+    writeFileSync(legacy, JSON.stringify({ ticks: { "yonder/tab": "ok" }, steps: {}, notes: [] }));
     const file = stateFile(false, h, h, {}, legacy);
     expect(r.readState(file).ticks).toEqual({ "yonder/tab": "ok" });
     expect(readFileSync(legacy, "utf8")).toContain("yonder/tab"); // (copied, not moved: nothing is lost)
-    writeFileSync(file, JSON.stringify({ ticks: { "keyring/drawer": "broken" }, steps: {}, answers: {}, notes: [] }));
+    writeFileSync(file, JSON.stringify({ ticks: { "keyring/drawer": "broken" }, steps: {}, notes: [] }));
     expect(r.readState(stateFile(false, h, h, {}, legacy)).ticks).toEqual({ "keyring/drawer": "broken" });
   });
   test("no legacy file is no error", () => {

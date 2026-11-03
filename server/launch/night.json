@@ -6,105 +6,61 @@
       "id": "t-install",
       "at": "2026-11-04T21:30:00Z",
       "title": "Install the zips",
-      "detail": "Windows PC: Install Forever.cmd from the iCloud test folder, then Ravenpost's exe from Ravenpost/. Zips behind their tag? Refresh them first (amber on the cards)."
+      "detail": "On the Windows PC, run Install Forever.cmd from the iCloud test folder, then Ravenpost's exe from the Ravenpost folder. If the installer cannot find the _forever_ folder, write a note. Refresh any test zip that is behind its tag first."
     },
     {
       "id": "t-board",
       "at": "2026-11-04T22:30:00Z",
-      "title": "Everything green on this page",
-      "detail": "Cards green or knowingly amber, Forever build line unchanged, no card held. Anything red now is fixed before midnight, not after."
+      "title": "Check that everything is green",
+      "detail": "Every addon should be green, or amber for a reason you accept. The Forever build line should be unchanged and no card held. Anything red now gets fixed before midnight, not after."
     },
     {
       "id": "t-launch",
       "at": "2026-11-04T23:00:00Z",
-      "title": "Launch: the login screen",
-      "detail": "Bottom-left version line. 1.60.1 means our 16001 is right. Anything else: write it in Open questions, the patch wave carries the new number."
+      "title": "Read the login screen",
+      "detail": "Read the version line at the bottom left. 1.60.1 means our 16001 is right. If it says anything else, write a note: the patch wave carries the new number."
     },
     {
       "id": "t-addons",
       "at": "2026-11-04T23:05:00Z",
-      "title": "AddOn List at character select",
-      "detail": "Click AddOns. Each of the nine must read loadable. Out of date or Incompatible is a red note for that addon (TOC / interface)."
+      "title": "Open the AddOns list",
+      "detail": "Click AddOns on the character screen. All nine should read as loadable (Out of date or Incompatible means the interface number is wrong, so write a note for that addon). While you are there, see whether character creation offers a Hardcore realm: if it does, Second Wind gets Forever work."
     },
     {
       "id": "t-errors",
       "at": "2026-11-04T23:10:00Z",
-      "title": "Errors on, a Skyborne in Zephras Isle",
-      "detail": "/console scriptErrors 1, make a Skyborne, enter the world. A Lua error at login is a broken check on the addon named in it."
+      "title": "Turn on Lua errors and enter the world",
+      "detail": "Type /console scriptErrors 1, make a Skyborne and enter the world in Zephras Isle. A Lua error at login breaks a check for the addon named in it."
     },
     {
       "id": "t-pass",
       "at": "2026-11-04T23:20:00Z",
-      "title": "The per-addon pass",
-      "detail": "30 to 60 minutes, in the cards' order. Tick each check. Broken ones get a note and, if you can, a screenshot."
+      "title": "Test each addon",
+      "detail": "Take 30 to 60 minutes and go through the addons in order. Tick each check. For a broken one, write a note and add a screenshot if you can."
     },
     {
       "id": "t-scan",
       "at": "2026-11-05T00:15:00Z",
-      "title": "/codex scan on",
-      "detail": "Leave it on while you play: the files feed Codex wave 2."
+      "title": "Turn on the Codex scan",
+      "detail": "Turn it on with /codex and leave it on while you play. Its files feed the second Codex wave."
     },
     {
       "id": "t-morning",
       "at": "2026-11-05T07:00:00Z",
-      "title": "Morning: notes into the patch wave",
-      "detail": "Copy the notes from the Launch page (or bun watchtower/server/control.ts notes) to print the night. A session fixes each, one patch per affected addon, your go once for the wave."
+      "title": "Morning: turn the notes into patches",
+      "detail": "Copy the night's notes from this page, or run bun watchtower/server/control.ts notes. A session fixes each one, one patch per affected addon, and you give your go once for the whole wave. Also check two things on the web: upload a diary with Ravenpost and see that the character's gender appears in the site's profile (the French text reads it), and see that the Forever filter on CurseForge lists our addons."
     },
     {
       "id": "t-pins",
       "at": "2026-11-05T04:17:00Z",
-      "title": "Pins job (04:17 UTC)",
-      "detail": "Does the launch build reach wow-data by itself? The Forever build line shows it."
+      "title": "Check the pins job at 04:17 UTC",
+      "detail": "Check that the launch build reaches wow-data by itself. The Forever build line shows it."
     },
     {
       "id": "t-chain",
       "at": "2026-11-06T05:00:00Z",
-      "title": "Data chain check",
-      "detail": "Launch build merged by itself, every addon's Game data green. If not, merge by hand (wow-data-prs skill)."
-    }
-  ],
-  "questions": [
-    {
-      "id": "q-interface",
-      "title": "Interface of the release client",
-      "ask": "What does the login screen's version line say?",
-      "ok": "1.60.1 (16001). Anything else needs the patch wave."
-    },
-    {
-      "id": "q-camelot",
-      "title": "_Camelot.toc still loaded",
-      "ask": "Do the nine show in the AddOn List?",
-      "ok": "All nine, so the suffix works at launch. The wiki says it may become _Forever later."
-    },
-    {
-      "id": "q-folder",
-      "title": "The _forever_ folder",
-      "ask": "Did Install Forever.cmd find it?",
-      "ok": "Installed into _forever_. If the folder moved, the installer, Ravenpost and the site's hint all name it."
-    },
-    {
-      "id": "q-gender",
-      "title": "Battle.net gender on a Forever character",
-      "ask": "Upload a diary with Ravenpost: is the character's gender in the site's profile?",
-      "ok": "The site's French agreement reads gender from the Battle.net profile. Missing means a fallback is needed."
-    },
-    {
-      "id": "q-goodwill",
-      "title": "Goodwill's Forever data",
-      "ask": "After 4 Nov, are Forever's factions in forever.db?",
-      "ok": "The faction count in Forever data below moves past today's. Second week at the earliest."
-    },
-    {
-      "id": "q-hardcore",
-      "title": "A Forever Hardcore realm?",
-      "ask": "Does character creation offer Hardcore?",
-      "ok": "If yes, Second Wind gets Forever work. If no, it stays Era-first."
-    },
-    {
-      "id": "q-filter",
-      "title": "Store pages under Forever",
-      "ask": "On CurseForge, does the Forever filter list our addons?",
-      "ok": "Filed under 1.60.1. Note the 'main file' label if it says Classic TBC first."
+      "title": "Check the data jobs",
+      "detail": "The launch build should have merged by itself and every addon's game data job should be green. If not, merge by hand with the wow-data-prs skill."
     }
   ],
   "addons": [

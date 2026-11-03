@@ -13,11 +13,14 @@ import { LAUNCH_END } from "../rules";
 import { family } from "../sources";
 import * as rules from "./rules";
 
+/** What each source reads, for the sentences about it. */
+const THING: Record<string, string> = { preflight: "preflight's checks", status: "the repositories' state", board: "the board", "data-prs": "the daily jobs and pull requests", latest: "the game's builds", stores: "the store pages", zips: "the test zip folder", "launch-data": "Forever's data", "launch-infra": "the site and inbox check", "launch-shots": "the screenshots" };
+const cap = (x: string) => x[0].toUpperCase() + x.slice(1);
+
 export type Content = {
   launch: string;
   chainCheckAt: string;
   timeline: { id: string; at: string; title: string; detail: string }[];
-  questions: { id: string; title: string; ask: string; ok: string }[];
   addons: { id: string; name: string; slash: string; rank: number; risk: string; checks: { id: string; look: string; ok: string; todo: string; fix: string }[] }[];
 };
 
@@ -131,7 +134,7 @@ export function launchView(content: Content, cells: Record<string, Cell>, state:
     .sort((a, b) => a.rank - b.rank)
     .map((a) => {
       const report = preflight.find((p) => p.name === a.id);
-      const ready = report ? rules.readiness(report.rows) : { light: "grey" as const, reasons: [cells.preflight?.error ?? "preflight has not answered yet"] };
+      const ready = report ? rules.readiness(report.rows) : { light: "grey" as const, reasons: [cells.preflight?.error ?? "Watchtower has not heard from preflight yet."] };
       const game = rules.inGame(a.id, a.checks.map((c) => c.id), state.ticks);
       const repo = status.find((s) => s.name === a.id);
       const zip = report?.rows.find((r) => r.label === "test zip");
@@ -152,8 +155,8 @@ export function launchView(content: Content, cells: Record<string, Cell>, state:
 
   const chain = cells.status?.data
     ? rules.chain(status.filter((s) => s.name === "wow-data" || content.addons.some((a) => a.id === s.name)).map((s) => ({ name: s.name, runs: s.runs, prs: s.prs })), now, Date.parse(content.chainCheckAt))
-    : { light: "grey" as const, reasons: [cells.status?.error ?? "status.ts has not answered yet"] };
-  const infra = cells["launch-infra"]?.data ? rules.infra(cells["launch-infra"].data as rules.Probe[]) : { light: "grey" as const, reasons: ["not probed yet"] };
+    : { light: "grey" as const, reasons: [cells.status?.error ?? "Watchtower has not heard from status yet."] };
+  const infra = cells["launch-infra"]?.data ? rules.infra(cells["launch-infra"].data as rules.Probe[]) : { light: "grey" as const, reasons: ["The site and inbox have not been checked yet."] };
   const launchRepos = launchRepoSet(content);
   const cards = ((cells.board?.data as rules.Card[] | undefined) ?? []).filter((c) => c.status !== "done");
   const boardV = rules.board(cards, launchRepos);
@@ -163,7 +166,7 @@ export function launchView(content: Content, cells: Record<string, Cell>, state:
   const failing = mine.filter((k) => cells[k]?.error && cells[k].data !== undefined);
   // (a cached reading older than its interval is no more green than a failed one)
   const cached = mine.filter((k) => !failing.includes(k) && staleCache(cells[k], now));
-  const sourcesV: rules.Verdict = { light: failing.length || cached.length ? "amber" : "green", reasons: [...failing.map((k) => `${k} failed: ${cells[k].error}`), ...cached.map((k) => `${k}: a cached reading older than its interval, reading again`)] };
+  const sourcesV: rules.Verdict = { light: failing.length || cached.length ? "amber" : "green", reasons: [...failing.map((k) => `Watchtower could not read ${THING[k] ?? k}: ${cells[k].error}`), ...cached.map((k) => `${cap(THING[k] ?? k)} is an old reading while Watchtower reads it again.`)] };
 
   const overall = rules.worst(buildV.light, chain.light, infra.light, boardV.light, sourcesV.light, ...addons.map((a) => a.light));
 
@@ -184,7 +187,6 @@ export function launchView(content: Content, cells: Record<string, Cell>, state:
     build: { ...buildV, pin: build?.pin, latest: build?.latest, toc },
     addons,
     timeline,
-    questions: content.questions.map((q) => ({ ...q, done: state.answers[q.id]?.done ?? false, text: state.answers[q.id]?.text ?? "" })),
     data: { ...(cells["launch-data"]?.data as object | undefined), error: cells["launch-data"]?.error },
     chain,
     infra: { ...infra, probes: cells["launch-infra"]?.data as rules.Probe[] | undefined },
