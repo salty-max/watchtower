@@ -1,0 +1,18 @@
+[
+  {
+    "id": "watchtower-control-centre-m1",
+    "repo": "watchtower",
+    "title": "Control centre M1",
+    "status": "running",
+    "session": "dad55ee7-7221-4750-a070-bf9843b964c6",
+    "updated": "2026-11-03T17:29:17+01:00",
+    "repos": [
+      "watchtower"
+    ],
+    "waits": "",
+    "since": {
+      "watchtower": "2026-11-03T17:29:17.198+01:00"
+    },
+    "body": "## Try\n\nbun watchtower/server/control.ts --demo, open the pages in a browser (desktop and mobile)\n\n## Committed\n\n(none yet)\n\n## Left\n\nserver, rules, four pages, tests\n"
+  }
+]

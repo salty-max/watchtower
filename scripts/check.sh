@@ -11,6 +11,8 @@ cd "$(dirname "$0")/.."
 bun install --frozen-lockfile
 bunx tsc --noEmit
 bun test server
+# the page's script parses (it is served as text, so tsc never sees it)
+bun -e 'new Function(require("fs").readFileSync("web/page.js", "utf8"))'
 if [ -f go.mod ]; then
   test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
   go vet ./...

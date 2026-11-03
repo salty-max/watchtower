@@ -1,0 +1,532 @@
+[
+  {
+    "name": "addon-kit",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "c288c6e feat: --json for data-prs.ts and store.ts, the store's repository argument checked against the known addons",
+    "slug": "salty-max/addon-kit",
+    "check": "bun run check",
+    "runs": [],
+    "prs": [],
+    "checked": true
+  },
+  {
+    "name": "geoguessr",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "a965b7f docs: the repository on github",
+    "slug": "salty-max/wowguessr",
+    "check": "bun run check",
+    "hooks": "the family's hooks aren't installed (bun addon-kit/hooks.ts install)",
+    "runs": [],
+    "prs": [],
+    "checked": true
+  },
+  {
+    "name": "goodwill",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 1,
+    "dirty": 0,
+    "head": "ebd831a chore(release): v0.3.0",
+    "slug": "salty-max/goodwill",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "ebd831a7f3b1715f3f1cfdd6e2ab8ca42a6c4b98",
+        "at": "2026-11-02T00:52:16Z"
+      },
+      {
+        "workflow": "Game data",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "ebd831a7f3b1715f3f1cfdd6e2ab8ca42a6c4b98",
+        "at": "2026-11-03T14:42:21Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "Goodwill-v0.3.0.zip",
+      "version": "v0.3.0",
+      "state": "current",
+      "behind": 0
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  },
+  {
+    "name": "harness",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "dceb426 fix(pane): stepped lines stay in their colour with a short pause, no dead hop or dashed code, timer tests, readme",
+    "slug": "salty-max/harness",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "dceb426f396b9355fa6e21f129a70f5767345c57",
+        "at": "2026-11-02T18:40:22Z"
+      }
+    ],
+    "prs": [],
+    "checked": true
+  },
+  {
+    "name": "hearthtale",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "d043fa6 chore(release): v0.14.0",
+    "slug": "salty-max/hearthtale",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "d043fa657a07e93f3cf646e2096370a370f0246a",
+        "at": "2026-11-03T02:24:59Z"
+      },
+      {
+        "workflow": "Game data",
+        "status": "completed",
+        "conclusion": "failure",
+        "sha": "d043fa657a07e93f3cf646e2096370a370f0246a",
+        "at": "2026-11-03T14:24:15Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "Hearthtale-v0.14.0.zip",
+      "version": "v0.14.0",
+      "state": "current",
+      "behind": 0
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  },
+  {
+    "name": "keyring",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "11d7624 chore(release): v0.4.0",
+    "slug": "salty-max/keyring",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "11d7624293590cb9861a0025d56cf1bad105b997",
+        "at": "2026-11-02T00:50:48Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "Keyring-v0.4.0.zip",
+      "version": "v0.4.0",
+      "state": "current",
+      "behind": 0
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  },
+  {
+    "name": "lorekeepers-codex",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "b44c00d chore: the game's data at wow-data's pins",
+    "slug": "salty-max/lorekeepers-codex",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "534450ac30548c024b773e3a998c5fe76fea7a35",
+        "at": "2026-11-02T00:49:22Z"
+      },
+      {
+        "workflow": "Game data",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "b44c00d109618c3cb57d7435a137fb0339e213bd",
+        "at": "2026-11-03T14:28:06Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "LorekeepersCodex-v0.16.0-1-gb44c00d.zip",
+      "version": "v0.16.0-1-gb44c00d",
+      "state": "current",
+      "behind": 0
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  },
+  {
+    "name": "mealbook",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "071a345 chore(release): v0.2.0",
+    "slug": "salty-max/mealbook",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "071a345ec89bff91291903c70c9b49791caaec8c",
+        "at": "2026-11-02T00:51:41Z"
+      },
+      {
+        "workflow": "Game data",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "071a345ec89bff91291903c70c9b49791caaec8c",
+        "at": "2026-11-03T14:49:50Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "Mealbook-v0.2.0.zip",
+      "version": "v0.2.0",
+      "state": "current",
+      "behind": 0
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  },
+  {
+    "name": "palaver",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "97579cc chore(release): v0.3.0",
+    "slug": "salty-max/palaver",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "97579ccd745bb9520734af83cac70039f49ea346",
+        "at": "2026-11-02T00:50:59Z"
+      },
+      {
+        "workflow": "Game data",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "97579ccd745bb9520734af83cac70039f49ea346",
+        "at": "2026-11-03T14:41:10Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "Palaver-v0.3.0.zip",
+      "version": "v0.3.0",
+      "state": "current",
+      "behind": 0
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  },
+  {
+    "name": "ravenpost",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "c9311e7 build: a test build carries its build time, so each is a new file for smart app control",
+    "slug": "salty-max/ravenpost",
+    "check": "bash scripts/check.sh",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "c9311e7e70ae6ba95e247e9254408740c295e9ef",
+        "at": "2026-11-03T02:03:10Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "ravenpost-v0.5.2-2-gc9311e7-windows-x64.exe",
+      "version": "v0.5.2-2-gc9311e7",
+      "state": "current",
+      "behind": 0
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  },
+  {
+    "name": "second-wind",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "e217087 chore(release): v0.6.0",
+    "slug": "salty-max/second-wind",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "e217087750f48fe82d25474f188c8a6f9bfe133c",
+        "at": "2026-11-02T00:50:38Z"
+      },
+      {
+        "workflow": "Game data",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "e217087750f48fe82d25474f188c8a6f9bfe133c",
+        "at": "2026-11-03T14:39:42Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "SecondWind-v0.6.0.zip",
+      "version": "v0.6.0",
+      "state": "current",
+      "behind": 0
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  },
+  {
+    "name": "watchtower",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "7626752 test: the sources' argv pinned exactly",
+    "slug": "salty-max/watchtower",
+    "check": "bash scripts/check.sh",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "7626752becd5a993e31257d39396ddf486b013b7",
+        "at": "2026-11-03T15:14:04Z"
+      }
+    ],
+    "prs": [],
+    "checked": true
+  },
+  {
+    "name": "wow-data",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "bf4ac98 feat: latest.ts --json, its rows shared with the Markdown",
+    "slug": "salty-max/wow-data",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "bf4ac9871a91268337e1de270a9533c98733d173",
+        "at": "2026-11-03T15:20:53Z"
+      },
+      {
+        "workflow": "Databases",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "bf4ac9871a91268337e1de270a9533c98733d173",
+        "at": "2026-11-03T15:20:53Z"
+      },
+      {
+        "workflow": "Pins",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "895b251696ccbbdea4aee5d31c2621287356f12a",
+        "at": "2026-11-03T11:59:01Z"
+      },
+      {
+        "workflow": "Players",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "60006b950d5ea2c6f63d7505f5ef361028cc9f6b",
+        "at": "2026-11-03T12:23:31Z"
+      }
+    ],
+    "prs": [],
+    "checked": true
+  },
+  {
+    "name": "wow-locker",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "7dfc8a2 chore: hold wowlocker, cron every 15 min, daily monitor, addon drops tbc anniversary",
+    "slug": "salty-max/wow-locker",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "7dfc8a280df50dbef614963e2d7e012232b15a24",
+        "at": "2026-10-30T22:44:48Z"
+      },
+      {
+        "workflow": "Monitor",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "7dfc8a280df50dbef614963e2d7e012232b15a24",
+        "at": "2026-11-03T14:26:05Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "WowLocker-v0.3.11.zip",
+      "version": "v0.3.11",
+      "state": "current"
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  },
+  {
+    "name": "yonder",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 0,
+    "dirty": 0,
+    "head": "700f99b chore(release): v0.15.0",
+    "slug": "salty-max/yonder",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "700f99b7214941b5c691556be537dad3b3d2f7c6",
+        "at": "2026-11-02T00:50:22Z"
+      },
+      {
+        "workflow": "Game data",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "700f99b7214941b5c691556be537dad3b3d2f7c6",
+        "at": "2026-11-03T14:36:24Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "Yonder-v0.15.0.zip",
+      "version": "v0.15.0",
+      "state": "current",
+      "behind": 0
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  },
+  {
+    "name": "yours-truly",
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 0,
+    "behind": 1,
+    "dirty": 0,
+    "head": "709309c chore(release): v0.3.0",
+    "slug": "salty-max/yours-truly",
+    "check": "bun run check",
+    "runs": [
+      {
+        "workflow": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "709309cbdd5d4d0fe5ffc02d35899b7967f13c8c",
+        "at": "2026-11-02T00:52:41Z"
+      },
+      {
+        "workflow": "Game data",
+        "status": "completed",
+        "conclusion": "success",
+        "sha": "709309cbdd5d4d0fe5ffc02d35899b7967f13c8c",
+        "at": "2026-11-03T14:59:35Z"
+      }
+    ],
+    "prs": [],
+    "build": {
+      "file": "YoursTruly-v0.3.0.zip",
+      "version": "v0.3.0",
+      "state": "current",
+      "behind": 0
+    },
+    "extra": {
+      "column": "zip ✓",
+      "attention": []
+    },
+    "checked": true
+  }
+]

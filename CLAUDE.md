@@ -3,7 +3,7 @@
 The addon family's control centre (salty-max/watchtower, private, not created
 on GitHub yet): a macOS menu-bar app, a Go and Wails v3 shell around a Bun
 server, that will show releases, the daily data pull requests, store pages and
-test zips as lights (M0 is built: the sources table and the tools' JSON). Read the family's CLAUDE.md
+test zips as lights (M0 and M1 are built: the sources table, the tools' JSON, the server and the four pages in a browser). Read the family's CLAUDE.md
 (`~/code/wow-addons/CLAUDE.md`) first, and the plan,
 `../ideas/control-centre.md` (approved 3 November 2026, name and defaults in
 its section 9).
@@ -14,6 +14,8 @@ its section 9).
 |---|---|
 | The plan, the milestones (M0 groundwork, M1 server and pages, M2 shell, M3 notifications, M4 launch night as a mode) | `../ideas/control-centre.md` |
 | What exists, file by file | `docs/architecture.md` |
+| Run the server (`--demo` first) | `bun watchtower/server/control.ts [--demo]` from the family folder |
+| The lights' rules, the allow-list | `server/rules.ts`, `server/actions.ts` (tests beside them) |
 | The tools it reads (argv lists, `--json`, the words that may never appear) | `server/sources.ts`, `server/sources.test.ts` |
 | The tools' JSON (additive, their Markdown unchanged) | `../addon-kit/data-prs.ts`, `store.ts`, `preflight.ts`, `status.ts`, `board.ts` and `../wow-data/bin/latest.ts` |
 

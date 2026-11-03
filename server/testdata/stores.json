@@ -1,0 +1,152 @@
+[
+  {
+    "repo": "goodwill",
+    "read": true,
+    "title": "Goodwill: Reputation Road & Faction Stories",
+    "id": 1765838,
+    "curseforge": {
+      "page": "same"
+    },
+    "github": "none",
+    "wago": {
+      "state": "same"
+    },
+    "due": [],
+    "semicolon": false
+  },
+  {
+    "repo": "hearthtale",
+    "read": true,
+    "title": "Hearthtale: Character Diary & Journal",
+    "id": 1737290,
+    "curseforge": {
+      "page": "same"
+    },
+    "github": "none",
+    "wago": {
+      "state": "same"
+    },
+    "due": [],
+    "semicolon": false
+  },
+  {
+    "repo": "keyring",
+    "read": true,
+    "title": "Keyring: Minimap Button Drawer",
+    "id": 1739386,
+    "curseforge": {
+      "page": "same"
+    },
+    "github": "none",
+    "wago": {
+      "state": "same"
+    },
+    "due": [],
+    "semicolon": false
+  },
+  {
+    "repo": "lorekeepers-codex",
+    "read": true,
+    "title": "Lorekeeper's Codex: Lore of Azeroth",
+    "id": 1727545,
+    "curseforge": {
+      "page": "same"
+    },
+    "github": "none",
+    "wago": {
+      "state": "same"
+    },
+    "due": [],
+    "semicolon": false
+  },
+  {
+    "repo": "mealbook",
+    "read": true,
+    "title": "Mealbook: Cooking Guide & Cookbook",
+    "id": 1754441,
+    "curseforge": {
+      "page": "same"
+    },
+    "github": "none",
+    "wago": {
+      "state": "same"
+    },
+    "due": [],
+    "semicolon": false
+  },
+  {
+    "repo": "palaver",
+    "read": true,
+    "title": "Palaver: Quest & NPC Dialogue",
+    "id": 1754439,
+    "curseforge": {
+      "page": "same"
+    },
+    "github": "none",
+    "wago": {
+      "state": "same"
+    },
+    "due": [],
+    "semicolon": false
+  },
+  {
+    "repo": "second-wind",
+    "read": true,
+    "title": "Second Wind: Close Call & Death Debrief",
+    "id": 1739380,
+    "curseforge": {
+      "page": "same"
+    },
+    "github": "none",
+    "wago": {
+      "state": "same"
+    },
+    "due": [],
+    "semicolon": false
+  },
+  {
+    "repo": "wow-locker",
+    "read": true,
+    "title": "WoWLocker",
+    "id": 1724925,
+    "curseforge": {
+      "page": "same"
+    },
+    "github": "none",
+    "wago": {
+      "state": "same"
+    },
+    "due": [],
+    "semicolon": false
+  },
+  {
+    "repo": "yonder",
+    "read": true,
+    "title": "Yonder: Riddles, Rare Hunts & an Explorer's Journal",
+    "id": 1728396,
+    "curseforge": {
+      "page": "same"
+    },
+    "github": "same",
+    "wago": {
+      "state": "same"
+    },
+    "due": [],
+    "semicolon": false
+  },
+  {
+    "repo": "yours-truly",
+    "read": true,
+    "title": "Yours Truly: Letters from the People You Helped",
+    "id": 1765844,
+    "curseforge": {
+      "page": "same"
+    },
+    "github": "none",
+    "wago": {
+      "state": "same"
+    },
+    "due": [],
+    "semicolon": false
+  }
+]

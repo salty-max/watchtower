@@ -1,0 +1,161 @@
+{
+  "at": "2026-11-03T16:29:26.375Z",
+  "repos": [
+    "wow-data",
+    "hearthtale",
+    "lorekeepers-codex",
+    "yonder",
+    "second-wind",
+    "palaver",
+    "mealbook",
+    "goodwill",
+    "yours-truly"
+  ],
+  "jobs": [
+    {
+      "repo": "wow-data",
+      "workflow": "pins.yml",
+      "label": "Pins (the builds)",
+      "run": {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T11:59:01Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/wow-data/actions/runs/41631891226"
+      },
+      "mark": "✓",
+      "text": "success, today"
+    },
+    {
+      "repo": "wow-data",
+      "workflow": "players.yml",
+      "label": "Players (facts)",
+      "run": {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T12:23:31Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/wow-data/actions/runs/41635304513"
+      },
+      "mark": "✓",
+      "text": "success, today"
+    },
+    {
+      "repo": "wow-data",
+      "workflow": "db.yml",
+      "label": "Databases",
+      "run": {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T15:20:53Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/wow-data/actions/runs/41662929504"
+      },
+      "mark": "✓",
+      "text": "success, today"
+    },
+    {
+      "repo": "hearthtale",
+      "workflow": "game-data.yml",
+      "label": "Game data",
+      "run": {
+        "conclusion": "failure",
+        "createdAt": "2026-11-03T14:24:15Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/hearthtale/actions/runs/41653339598"
+      },
+      "mark": "✗",
+      "text": "failure, today"
+    },
+    {
+      "repo": "lorekeepers-codex",
+      "workflow": "game-data.yml",
+      "label": "Game data",
+      "run": {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T14:28:06Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/lorekeepers-codex/actions/runs/41653966430"
+      },
+      "mark": "✓",
+      "text": "success, today"
+    },
+    {
+      "repo": "yonder",
+      "workflow": "game-data.yml",
+      "label": "Game data",
+      "run": {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T14:36:24Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/yonder/actions/runs/41655351191"
+      },
+      "mark": "✓",
+      "text": "success, today"
+    },
+    {
+      "repo": "second-wind",
+      "workflow": "game-data.yml",
+      "label": "Game data",
+      "run": {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T14:39:42Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/second-wind/actions/runs/41655890376"
+      },
+      "mark": "✓",
+      "text": "success, today"
+    },
+    {
+      "repo": "palaver",
+      "workflow": "game-data.yml",
+      "label": "Game data",
+      "run": {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T14:41:10Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/palaver/actions/runs/41656130338"
+      },
+      "mark": "✓",
+      "text": "success, today"
+    },
+    {
+      "repo": "mealbook",
+      "workflow": "game-data.yml",
+      "label": "Game data",
+      "run": {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T14:49:50Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/mealbook/actions/runs/41657558043"
+      },
+      "mark": "✓",
+      "text": "success, today"
+    },
+    {
+      "repo": "goodwill",
+      "workflow": "game-data.yml",
+      "label": "Game data",
+      "run": {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T14:42:21Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/goodwill/actions/runs/41656319804"
+      },
+      "mark": "✓",
+      "text": "success, today"
+    },
+    {
+      "repo": "yours-truly",
+      "workflow": "game-data.yml",
+      "label": "Game data",
+      "run": {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T14:59:35Z",
+        "status": "completed",
+        "url": "https://github.com/salty-max/yours-truly/actions/runs/41659189652"
+      },
+      "mark": "✓",
+      "text": "success, today"
+    }
+  ],
+  "prs": [],
+  "errors": []
+}

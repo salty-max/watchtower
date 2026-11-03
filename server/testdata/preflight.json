@@ -1,0 +1,1090 @@
+[
+  {
+    "name": "goodwill",
+    "tag": "v0.3.0",
+    "version": "0.3.0",
+    "total": 0,
+    "ships": [],
+    "rows": [
+      {
+        "mark": "✗",
+        "label": "git",
+        "text": "1 to pull: release.sh wants main clean and in sync"
+      },
+      {
+        "mark": "✓",
+        "label": "version",
+        "text": "0.3.0 in both TOCs, the last tag's"
+      },
+      {
+        "mark": "✓",
+        "label": "interface",
+        "text": "classic 11509, the pinned 1.15.9.70576 · forever 16001, the pinned 1.60.1.70753"
+      },
+      {
+        "mark": "✓",
+        "label": "store ids",
+        "text": "CurseForge 1765838, Wago ZKbqa961, in both TOCs"
+      },
+      {
+        "mark": "✓",
+        "label": "Notes",
+        "text": "the page's summary, and frFR"
+      },
+      {
+        "mark": "✓",
+        "label": "page",
+        "text": "Support (Ko-fi) before Source, a summary, no semicolon"
+      },
+      {
+        "mark": "✓",
+        "label": "live",
+        "text": "CurseForge's page, Wago's and GitHub's are the file"
+      },
+      {
+        "mark": "·",
+        "label": "others",
+        "text": "names Hearthtale, Lorekeeper's Codex, Yonder, Second Wind, Mealbook, Palaver, Yours Truly. Tagged, not named: keyring, wow-locker"
+      },
+      {
+        "mark": "!",
+        "label": "deDE",
+        "text": "100/100 words, the kit's 79/79, flagged, 180 translations (78 stale)"
+      },
+      {
+        "mark": "!",
+        "label": "esES",
+        "text": "100/100 words, the kit's 79/79, flagged, 180 translations (78 stale)"
+      },
+      {
+        "mark": "·",
+        "label": "esMX",
+        "text": "esES's words, borrowed (its own names beside them)"
+      },
+      {
+        "mark": "✓",
+        "label": "frFR",
+        "text": "100/100 words, the kit's 79/79, 180 translations (0 stale)"
+      },
+      {
+        "mark": "!",
+        "label": "cold read",
+        "text": "authored text changed since v0.3.0 or the last cold read: deDE (1 file, since the cold read at 10462ff), esES (1 file, since the cold read at 10462ff). A cold read of each (the prose-reader), then bun addon-kit/coldread.ts goodwill '<verdict>'"
+      },
+      {
+        "mark": "·",
+        "label": "cold read",
+        "text": "read cold, nothing authored changed since: esMX at 10462ff, frFR at 766420a"
+      },
+      {
+        "mark": "✓",
+        "label": "CI",
+        "text": "success on HEAD"
+      },
+      {
+        "mark": "✓",
+        "label": "game data",
+        "text": "success"
+      },
+      {
+        "mark": "✓",
+        "label": "check",
+        "text": "passed on HEAD's tree"
+      },
+      {
+        "mark": "!",
+        "label": "review",
+        "text": "none recorded on HEAD: packet.ts, then the reviewer"
+      },
+      {
+        "mark": "✓",
+        "label": "test zip",
+        "text": "Goodwill-v0.3.0.zip is what ships at HEAD (the test in the game is yours to say)"
+      },
+      {
+        "mark": "✓",
+        "label": "kit",
+        "text": "copy of 9e6c86c, on addon-kit's origin"
+      },
+      {
+        "mark": "✓",
+        "label": "stores",
+        "text": "CURSEFORGE_TOKEN, WAGO_API_TOKEN set"
+      }
+    ],
+    "verdict": "nothing ships since v0.3.0, and 1 in the way, 4 to look at"
+  },
+  {
+    "name": "hearthtale",
+    "tag": "v0.14.0",
+    "version": "0.14.0",
+    "total": 0,
+    "ships": [],
+    "rows": [
+      {
+        "mark": "✓",
+        "label": "git",
+        "text": "main, clean, in sync with origin"
+      },
+      {
+        "mark": "✓",
+        "label": "version",
+        "text": "0.14.0 in all 4 TOCs, the last tag's"
+      },
+      {
+        "mark": "✓",
+        "label": "interface",
+        "text": "classic 11509, the pinned 1.15.9.70576 · forever 16001, the pinned 1.60.1.70753"
+      },
+      {
+        "mark": "✓",
+        "label": "store ids",
+        "text": "CurseForge 1737290, Wago E6gzPnN1, in both TOCs"
+      },
+      {
+        "mark": "✓",
+        "label": "Notes",
+        "text": "the page's summary, and frFR"
+      },
+      {
+        "mark": "✓",
+        "label": "page",
+        "text": "Support (Ko-fi) before Source, a summary, no semicolon"
+      },
+      {
+        "mark": "✓",
+        "label": "live",
+        "text": "CurseForge's page, Wago's and GitHub's are the file"
+      },
+      {
+        "mark": "·",
+        "label": "others",
+        "text": "names Lorekeeper's Codex, Yonder, Second Wind, Palaver, Mealbook, Goodwill, Yours Truly. Tagged, not named: keyring, wow-locker"
+      },
+      {
+        "mark": "✓",
+        "label": "deDE",
+        "text": "121/121 words, the kit's 79/79, flagged"
+      },
+      {
+        "mark": "✓",
+        "label": "esES",
+        "text": "121/121 words, the kit's 79/79, flagged"
+      },
+      {
+        "mark": "✓",
+        "label": "frFR",
+        "text": "121/121 words, the kit's 79/79"
+      },
+      {
+        "mark": "!",
+        "label": "cold read",
+        "text": "authored text changed since v0.14.0 or the last cold read: deDE (1 file, since the cold read at f0c674d), esES (1 file, since the cold read at f0c674d). A cold read of each (the prose-reader), then bun addon-kit/coldread.ts hearthtale '<verdict>'"
+      },
+      {
+        "mark": "·",
+        "label": "cold read",
+        "text": "read cold, nothing authored changed since: frFR at 01c6ba7"
+      },
+      {
+        "mark": "✓",
+        "label": "CI",
+        "text": "success on HEAD"
+      },
+      {
+        "mark": "!",
+        "label": "game data",
+        "text": "failure on d043fa6 (2026-11-03): look before releasing"
+      },
+      {
+        "mark": "✓",
+        "label": "check",
+        "text": "passed on HEAD's tree"
+      },
+      {
+        "mark": "!",
+        "label": "review",
+        "text": "none recorded on HEAD: packet.ts, then the reviewer"
+      },
+      {
+        "mark": "✓",
+        "label": "test zip",
+        "text": "Hearthtale-v0.14.0.zip is what ships at HEAD (the test in the game is yours to say)"
+      },
+      {
+        "mark": "✓",
+        "label": "kit",
+        "text": "copy of 9e6c86c, on addon-kit's origin"
+      },
+      {
+        "mark": "✓",
+        "label": "stores",
+        "text": "CURSEFORGE_TOKEN, WAGO_API_TOKEN set"
+      }
+    ],
+    "verdict": "nothing ships since v0.14.0"
+  },
+  {
+    "name": "keyring",
+    "tag": "v0.4.0",
+    "version": "0.4.0",
+    "total": 0,
+    "ships": [],
+    "rows": [
+      {
+        "mark": "✓",
+        "label": "git",
+        "text": "main, clean, in sync with origin"
+      },
+      {
+        "mark": "✓",
+        "label": "version",
+        "text": "0.4.0 in both TOCs, the last tag's"
+      },
+      {
+        "mark": "✓",
+        "label": "interface",
+        "text": "classic 11509, the pinned 1.15.9.70576 · forever 16001, the pinned 1.60.1.70753"
+      },
+      {
+        "mark": "✓",
+        "label": "store ids",
+        "text": "CurseForge 1739386, Wago ANz7JV64, in both TOCs"
+      },
+      {
+        "mark": "✓",
+        "label": "Notes",
+        "text": "the page's summary, and frFR"
+      },
+      {
+        "mark": "✓",
+        "label": "page",
+        "text": "Support (Ko-fi) before Source, a summary, no semicolon"
+      },
+      {
+        "mark": "✓",
+        "label": "live",
+        "text": "CurseForge's page, Wago's and GitHub's are the file"
+      },
+      {
+        "mark": "·",
+        "label": "others",
+        "text": "names no sibling. Tagged, not named: goodwill, hearthtale, lorekeepers-codex, mealbook, palaver, second-wind, wow-locker, yonder, yours-truly"
+      },
+      {
+        "mark": "✓",
+        "label": "deDE",
+        "text": "14/14 words, the kit's 0/0, flagged"
+      },
+      {
+        "mark": "✓",
+        "label": "esES",
+        "text": "14/14 words, the kit's 0/0, flagged"
+      },
+      {
+        "mark": "✓",
+        "label": "frFR",
+        "text": "14/14 words, the kit's 0/0"
+      },
+      {
+        "mark": "!",
+        "label": "cold read",
+        "text": "authored text changed since v0.4.0 or the last cold read: deDE (1 file, since the cold read at 232f756), esES (1 file, since the cold read at 232f756). A cold read of each (the prose-reader), then bun addon-kit/coldread.ts keyring '<verdict>'"
+      },
+      {
+        "mark": "·",
+        "label": "cold read",
+        "text": "read cold, nothing authored changed since: frFR at b603c2e"
+      },
+      {
+        "mark": "✓",
+        "label": "CI",
+        "text": "success on HEAD"
+      },
+      {
+        "mark": "✓",
+        "label": "check",
+        "text": "passed on HEAD's tree"
+      },
+      {
+        "mark": "!",
+        "label": "review",
+        "text": "none recorded on HEAD: packet.ts, then the reviewer"
+      },
+      {
+        "mark": "✓",
+        "label": "test zip",
+        "text": "Keyring-v0.4.0.zip is what ships at HEAD (the test in the game is yours to say)"
+      },
+      {
+        "mark": "✓",
+        "label": "stores",
+        "text": "CURSEFORGE_TOKEN, WAGO_API_TOKEN set"
+      }
+    ],
+    "verdict": "nothing ships since v0.4.0"
+  },
+  {
+    "name": "lorekeepers-codex",
+    "tag": "v0.16.0",
+    "version": "0.16.0",
+    "next": "0.16.1",
+    "total": 1,
+    "ships": [
+      {
+        "sha": "b44c00d",
+        "subject": "chore: the game's data at wow-data's pins",
+        "kind": "data"
+      }
+    ],
+    "rows": [
+      {
+        "mark": "✓",
+        "label": "git",
+        "text": "main, clean, in sync with origin"
+      },
+      {
+        "mark": "✓",
+        "label": "version",
+        "text": "0.16.0 in both TOCs, the last tag's"
+      },
+      {
+        "mark": "✓",
+        "label": "interface",
+        "text": "classic 11509, the pinned 1.15.9.70576 · forever 16001, the pinned 1.60.1.70753"
+      },
+      {
+        "mark": "✓",
+        "label": "store ids",
+        "text": "CurseForge 1727545, Wago j6jAL0NR, in both TOCs"
+      },
+      {
+        "mark": "✓",
+        "label": "Notes",
+        "text": "the page's summary, and frFR"
+      },
+      {
+        "mark": "✓",
+        "label": "page",
+        "text": "Support (Ko-fi) before Source, a summary, no semicolon"
+      },
+      {
+        "mark": "✓",
+        "label": "live",
+        "text": "CurseForge's page, Wago's and GitHub's are the file"
+      },
+      {
+        "mark": "·",
+        "label": "others",
+        "text": "names Hearthtale, Yonder, Second Wind, Palaver, Mealbook, Goodwill, Yours Truly. Tagged, not named: keyring, wow-locker"
+      },
+      {
+        "mark": "!",
+        "label": "deDE",
+        "text": "535/535 pages (253 stale), 176/176 words, 46/47 chapters, flagged: English where it's missing"
+      },
+      {
+        "mark": "!",
+        "label": "esES",
+        "text": "535/535 pages (253 stale), 176/176 words, 47/47 chapters, flagged"
+      },
+      {
+        "mark": "✓",
+        "label": "frFR",
+        "text": "535/535 pages (0 stale), 176/176 words, 47/47 chapters"
+      },
+      {
+        "mark": "!",
+        "label": "cold read",
+        "text": "authored text changed since v0.16.0 or the last cold read: deDE (9 files, since the cold read at deeb234), esES (9 files, since the cold read at deeb234). A cold read of each (the prose-reader), then bun addon-kit/coldread.ts lorekeepers-codex '<verdict>'"
+      },
+      {
+        "mark": "·",
+        "label": "cold read",
+        "text": "read cold, nothing authored changed since: frFR at fcb4b8e"
+      },
+      {
+        "mark": "!",
+        "label": "CI",
+        "text": "last run on 534450a (success), not on HEAD"
+      },
+      {
+        "mark": "✓",
+        "label": "game data",
+        "text": "success"
+      },
+      {
+        "mark": "✓",
+        "label": "check",
+        "text": "passed on HEAD's tree"
+      },
+      {
+        "mark": "!",
+        "label": "review",
+        "text": "none recorded on HEAD: packet.ts, then the reviewer"
+      },
+      {
+        "mark": "✓",
+        "label": "test zip",
+        "text": "LorekeepersCodex-v0.16.0-1-gb44c00d.zip is what ships at HEAD (the test in the game is yours to say)"
+      },
+      {
+        "mark": "✓",
+        "label": "kit",
+        "text": "copy of 9e6c86c, on addon-kit's origin"
+      },
+      {
+        "mark": "✓",
+        "label": "stores",
+        "text": "CURSEFORGE_TOKEN, WAGO_API_TOKEN set"
+      }
+    ],
+    "verdict": "ready but for 5 to look at"
+  },
+  {
+    "name": "mealbook",
+    "tag": "v0.2.0",
+    "version": "0.2.0",
+    "total": 0,
+    "ships": [],
+    "rows": [
+      {
+        "mark": "✓",
+        "label": "git",
+        "text": "main, clean, in sync with origin"
+      },
+      {
+        "mark": "✓",
+        "label": "version",
+        "text": "0.2.0 in both TOCs, the last tag's"
+      },
+      {
+        "mark": "✓",
+        "label": "interface",
+        "text": "classic 11509, the pinned 1.15.9.70576 · forever 16001, the pinned 1.60.1.70753"
+      },
+      {
+        "mark": "✓",
+        "label": "store ids",
+        "text": "CurseForge 1754441, Wago YK9xja6L, in both TOCs"
+      },
+      {
+        "mark": "✓",
+        "label": "Notes",
+        "text": "the page's summary, and frFR"
+      },
+      {
+        "mark": "✓",
+        "label": "page",
+        "text": "Support (Ko-fi) before Source, a summary, no semicolon"
+      },
+      {
+        "mark": "✓",
+        "label": "live",
+        "text": "CurseForge's page, Wago's and GitHub's are the file"
+      },
+      {
+        "mark": "·",
+        "label": "others",
+        "text": "names Hearthtale, Lorekeeper's Codex, Yonder, Second Wind, Palaver, Goodwill, Yours Truly. Tagged, not named: keyring, wow-locker"
+      },
+      {
+        "mark": "!",
+        "label": "deDE",
+        "text": "217/217 words, the kit's 79/79, flagged, 264 translations (174 stale)"
+      },
+      {
+        "mark": "!",
+        "label": "esES",
+        "text": "217/217 words, the kit's 79/79, flagged, 264 translations (174 stale)"
+      },
+      {
+        "mark": "·",
+        "label": "esMX",
+        "text": "esES's words, borrowed (its own names beside them)"
+      },
+      {
+        "mark": "✓",
+        "label": "frFR",
+        "text": "217/217 words, the kit's 79/79, 264 translations (0 stale)"
+      },
+      {
+        "mark": "!",
+        "label": "cold read",
+        "text": "never recorded: deDE, esES. A cold read (the prose-reader), then bun addon-kit/coldread.ts mealbook '<verdict>' deDE esES"
+      },
+      {
+        "mark": "·",
+        "label": "cold read",
+        "text": "read cold, nothing authored changed since: frFR at a8f7e12"
+      },
+      {
+        "mark": "✓",
+        "label": "CI",
+        "text": "success on HEAD"
+      },
+      {
+        "mark": "✓",
+        "label": "game data",
+        "text": "success"
+      },
+      {
+        "mark": "✓",
+        "label": "check",
+        "text": "passed on HEAD's tree"
+      },
+      {
+        "mark": "!",
+        "label": "review",
+        "text": "none recorded on HEAD: packet.ts, then the reviewer"
+      },
+      {
+        "mark": "✓",
+        "label": "test zip",
+        "text": "Mealbook-v0.2.0.zip is what ships at HEAD (the test in the game is yours to say)"
+      },
+      {
+        "mark": "✓",
+        "label": "kit",
+        "text": "copy of 9e6c86c, on addon-kit's origin"
+      },
+      {
+        "mark": "✓",
+        "label": "stores",
+        "text": "CURSEFORGE_TOKEN, WAGO_API_TOKEN set"
+      }
+    ],
+    "verdict": "nothing ships since v0.2.0"
+  },
+  {
+    "name": "palaver",
+    "tag": "v0.3.0",
+    "version": "0.3.0",
+    "total": 0,
+    "ships": [],
+    "rows": [
+      {
+        "mark": "✓",
+        "label": "git",
+        "text": "main, clean, in sync with origin"
+      },
+      {
+        "mark": "✓",
+        "label": "version",
+        "text": "0.3.0 in both TOCs, the last tag's"
+      },
+      {
+        "mark": "✓",
+        "label": "interface",
+        "text": "classic 11509, the pinned 1.15.9.70576 · forever 16001, the pinned 1.60.1.70753"
+      },
+      {
+        "mark": "✓",
+        "label": "store ids",
+        "text": "CurseForge 1754439, Wago ZKbqbO61, in both TOCs"
+      },
+      {
+        "mark": "✓",
+        "label": "Notes",
+        "text": "the page's summary, and frFR"
+      },
+      {
+        "mark": "✓",
+        "label": "page",
+        "text": "Support (Ko-fi) before Source, a summary, no semicolon"
+      },
+      {
+        "mark": "✓",
+        "label": "live",
+        "text": "CurseForge's page, Wago's and GitHub's are the file"
+      },
+      {
+        "mark": "·",
+        "label": "others",
+        "text": "names Hearthtale, Lorekeeper's Codex, Yonder, Second Wind, Mealbook, Goodwill, Yours Truly. Tagged, not named: keyring, wow-locker"
+      },
+      {
+        "mark": "✓",
+        "label": "deDE",
+        "text": "50/50 words, the kit's 79/79, flagged"
+      },
+      {
+        "mark": "✓",
+        "label": "esES",
+        "text": "50/50 words, the kit's 79/79, flagged"
+      },
+      {
+        "mark": "✓",
+        "label": "frFR",
+        "text": "50/50 words, the kit's 79/79"
+      },
+      {
+        "mark": "!",
+        "label": "cold read",
+        "text": "authored text changed since v0.3.0 or the last cold read: deDE (1 file, since the cold read at e31e0cb), esES (1 file, since the cold read at e31e0cb). A cold read of each (the prose-reader), then bun addon-kit/coldread.ts palaver '<verdict>'"
+      },
+      {
+        "mark": "·",
+        "label": "cold read",
+        "text": "read cold, nothing authored changed since: frFR at 12e5412"
+      },
+      {
+        "mark": "✓",
+        "label": "CI",
+        "text": "success on HEAD"
+      },
+      {
+        "mark": "✓",
+        "label": "game data",
+        "text": "success"
+      },
+      {
+        "mark": "✓",
+        "label": "check",
+        "text": "passed on HEAD's tree"
+      },
+      {
+        "mark": "!",
+        "label": "review",
+        "text": "none recorded on HEAD: packet.ts, then the reviewer"
+      },
+      {
+        "mark": "✓",
+        "label": "test zip",
+        "text": "Palaver-v0.3.0.zip is what ships at HEAD (the test in the game is yours to say)"
+      },
+      {
+        "mark": "✓",
+        "label": "kit",
+        "text": "copy of 9e6c86c, on addon-kit's origin"
+      },
+      {
+        "mark": "✓",
+        "label": "stores",
+        "text": "CURSEFORGE_TOKEN, WAGO_API_TOKEN set"
+      }
+    ],
+    "verdict": "nothing ships since v0.3.0"
+  },
+  {
+    "name": "second-wind",
+    "tag": "v0.6.0",
+    "version": "0.6.0",
+    "total": 0,
+    "ships": [],
+    "rows": [
+      {
+        "mark": "✓",
+        "label": "git",
+        "text": "main, clean, in sync with origin"
+      },
+      {
+        "mark": "✓",
+        "label": "version",
+        "text": "0.6.0 in both TOCs, the last tag's"
+      },
+      {
+        "mark": "✓",
+        "label": "interface",
+        "text": "classic 11509, the pinned 1.15.9.70576 · forever 16001, the pinned 1.60.1.70753"
+      },
+      {
+        "mark": "✓",
+        "label": "store ids",
+        "text": "CurseForge 1739380, Wago XKqEjbKy, in both TOCs"
+      },
+      {
+        "mark": "✓",
+        "label": "Notes",
+        "text": "the page's summary, and frFR"
+      },
+      {
+        "mark": "✓",
+        "label": "page",
+        "text": "Support (Ko-fi) before Source, a summary, no semicolon"
+      },
+      {
+        "mark": "✓",
+        "label": "live",
+        "text": "CurseForge's page, Wago's and GitHub's are the file"
+      },
+      {
+        "mark": "·",
+        "label": "others",
+        "text": "names Hearthtale, Lorekeeper's Codex, Yonder, Palaver, Mealbook, Goodwill, Yours Truly. Tagged, not named: keyring, wow-locker"
+      },
+      {
+        "mark": "✓",
+        "label": "deDE",
+        "text": "322/322 words, the kit's 79/79, flagged"
+      },
+      {
+        "mark": "✓",
+        "label": "esES",
+        "text": "322/322 words, the kit's 79/79, flagged"
+      },
+      {
+        "mark": "·",
+        "label": "esMX",
+        "text": "esES's words, borrowed (its own names beside them)"
+      },
+      {
+        "mark": "✓",
+        "label": "frFR",
+        "text": "322/322 words, the kit's 79/79"
+      },
+      {
+        "mark": "!",
+        "label": "cold read",
+        "text": "authored text changed since v0.6.0 or the last cold read: deDE (1 file, since the cold read at 33d609f), esES (1 file, since the cold read at 33d609f). A cold read of each (the prose-reader), then bun addon-kit/coldread.ts second-wind '<verdict>'"
+      },
+      {
+        "mark": "·",
+        "label": "cold read",
+        "text": "read cold, nothing authored changed since: esMX at 33d609f, frFR at 093af21"
+      },
+      {
+        "mark": "✓",
+        "label": "CI",
+        "text": "success on HEAD"
+      },
+      {
+        "mark": "✓",
+        "label": "game data",
+        "text": "success"
+      },
+      {
+        "mark": "✓",
+        "label": "check",
+        "text": "passed on HEAD's tree"
+      },
+      {
+        "mark": "!",
+        "label": "review",
+        "text": "none recorded on HEAD: packet.ts, then the reviewer"
+      },
+      {
+        "mark": "✓",
+        "label": "test zip",
+        "text": "SecondWind-v0.6.0.zip is what ships at HEAD (the test in the game is yours to say)"
+      },
+      {
+        "mark": "✓",
+        "label": "kit",
+        "text": "copy of 9e6c86c, on addon-kit's origin"
+      },
+      {
+        "mark": "✓",
+        "label": "stores",
+        "text": "CURSEFORGE_TOKEN, WAGO_API_TOKEN set"
+      }
+    ],
+    "verdict": "nothing ships since v0.6.0"
+  },
+  {
+    "name": "wow-locker",
+    "tag": "v0.1.15",
+    "version": "0.3.11",
+    "total": 16,
+    "ships": [
+      {
+        "sha": "7dfc8a2",
+        "subject": "chore: hold wowlocker, cron every 15 min, daily monitor, addon drops tbc anniversary",
+        "kind": "other"
+      }
+    ],
+    "rows": [
+      {
+        "mark": "✓",
+        "label": "git",
+        "text": "main, clean, in sync with origin"
+      },
+      {
+        "mark": "·",
+        "label": "version",
+        "text": "addon 0.3.11 in its TOC; the tags are the site's (release.sh --addon X.Y.Z)"
+      },
+      {
+        "mark": "✓",
+        "label": "interface",
+        "text": "classic 11509, the pinned 1.15.9.70576"
+      },
+      {
+        "mark": "✓",
+        "label": "store ids",
+        "text": "CurseForge 1724925, Wago YK9x886L, in its TOC"
+      },
+      {
+        "mark": "✓",
+        "label": "Notes",
+        "text": "the page's summary"
+      },
+      {
+        "mark": "✓",
+        "label": "page",
+        "text": "Support (Ko-fi) before Source, a summary, no semicolon"
+      },
+      {
+        "mark": "✓",
+        "label": "live",
+        "text": "CurseForge's page, Wago's and GitHub's are the file"
+      },
+      {
+        "mark": "·",
+        "label": "others",
+        "text": "names no sibling. Tagged, not named: goodwill, hearthtale, keyring, lorekeepers-codex, mealbook, palaver, second-wind, yonder, yours-truly"
+      },
+      {
+        "mark": "✓",
+        "label": "CI",
+        "text": "success on HEAD"
+      },
+      {
+        "mark": "✓",
+        "label": "check",
+        "text": "passed on HEAD's tree"
+      },
+      {
+        "mark": "✓",
+        "label": "review",
+        "text": "\"reviewer: 3 findings (site addon page still named TBC/_anniversary_, monitor 10->45 doc, commit-sha wording) fixed in the same files; tick capacity noted\" on HEAD"
+      },
+      {
+        "mark": "✓",
+        "label": "test zip",
+        "text": "WowLocker-v0.3.11.zip is what ships at HEAD (the test in the game is yours to say)"
+      },
+      {
+        "mark": "✓",
+        "label": "stores",
+        "text": "CURSEFORGE_TOKEN, WAGO_API_TOKEN set"
+      }
+    ],
+    "verdict": "ready"
+  },
+  {
+    "name": "yonder",
+    "tag": "v0.15.0",
+    "version": "0.15.0",
+    "total": 0,
+    "ships": [],
+    "rows": [
+      {
+        "mark": "✓",
+        "label": "git",
+        "text": "main, clean, in sync with origin"
+      },
+      {
+        "mark": "✓",
+        "label": "version",
+        "text": "0.15.0 in all 3 TOCs, the last tag's"
+      },
+      {
+        "mark": "✓",
+        "label": "interface",
+        "text": "classic 11509, the pinned 1.15.9.70576 · forever 16001, the pinned 1.60.1.70753"
+      },
+      {
+        "mark": "✓",
+        "label": "store ids",
+        "text": "CurseForge 1728396, Wago ZKbq5y61, in both TOCs"
+      },
+      {
+        "mark": "✓",
+        "label": "Notes",
+        "text": "the page's summary, and frFR"
+      },
+      {
+        "mark": "✓",
+        "label": "page",
+        "text": "Support (Ko-fi) before Source, a summary and a GitHub note, no semicolon"
+      },
+      {
+        "mark": "✓",
+        "label": "live",
+        "text": "CurseForge's page, Wago's and GitHub's are the file"
+      },
+      {
+        "mark": "·",
+        "label": "others",
+        "text": "names Hearthtale, Lorekeeper's Codex, Second Wind, Palaver, Mealbook, Goodwill, Yours Truly. Tagged, not named: keyring, wow-locker"
+      },
+      {
+        "mark": "!",
+        "label": "deDE",
+        "text": "326/326 texts (181 stale), 604/604 words, 9/9 sections, flagged"
+      },
+      {
+        "mark": "!",
+        "label": "esES",
+        "text": "326/326 texts (181 stale), 604/604 words, 9/9 sections, flagged"
+      },
+      {
+        "mark": "✓",
+        "label": "frFR",
+        "text": "326/326 texts (0 stale), 604/604 words, 9/9 sections"
+      },
+      {
+        "mark": "!",
+        "label": "cold read",
+        "text": "authored text changed since v0.15.0 or the last cold read: deDE (2 files, since the cold read at 8b8744f), esES (2 files, since the cold read at 8b8744f). A cold read of each (the prose-reader), then bun addon-kit/coldread.ts yonder '<verdict>'"
+      },
+      {
+        "mark": "·",
+        "label": "cold read",
+        "text": "read cold, nothing authored changed since: frFR at 85b9d22"
+      },
+      {
+        "mark": "✓",
+        "label": "CI",
+        "text": "success on HEAD"
+      },
+      {
+        "mark": "✓",
+        "label": "game data",
+        "text": "success"
+      },
+      {
+        "mark": "✓",
+        "label": "check",
+        "text": "passed on HEAD's tree"
+      },
+      {
+        "mark": "!",
+        "label": "review",
+        "text": "none recorded on HEAD: packet.ts, then the reviewer"
+      },
+      {
+        "mark": "✓",
+        "label": "test zip",
+        "text": "Yonder-v0.15.0.zip is what ships at HEAD (the test in the game is yours to say)"
+      },
+      {
+        "mark": "✓",
+        "label": "kit",
+        "text": "copy of 9e6c86c, on addon-kit's origin"
+      },
+      {
+        "mark": "✓",
+        "label": "stores",
+        "text": "CURSEFORGE_TOKEN, WAGO_API_TOKEN set"
+      }
+    ],
+    "verdict": "nothing ships since v0.15.0"
+  },
+  {
+    "name": "yours-truly",
+    "tag": "v0.3.0",
+    "version": "0.3.0",
+    "total": 0,
+    "ships": [],
+    "rows": [
+      {
+        "mark": "✗",
+        "label": "git",
+        "text": "1 to pull: release.sh wants main clean and in sync"
+      },
+      {
+        "mark": "✓",
+        "label": "version",
+        "text": "0.3.0 in both TOCs, the last tag's"
+      },
+      {
+        "mark": "✓",
+        "label": "interface",
+        "text": "classic 11509, the pinned 1.15.9.70576 · forever 16001, the pinned 1.60.1.70753"
+      },
+      {
+        "mark": "✓",
+        "label": "store ids",
+        "text": "CurseForge 1765844, Wago j6jAx1NR, in both TOCs"
+      },
+      {
+        "mark": "✓",
+        "label": "Notes",
+        "text": "the page's summary, and frFR"
+      },
+      {
+        "mark": "✓",
+        "label": "page",
+        "text": "Support (Ko-fi) before Source, a summary, no semicolon"
+      },
+      {
+        "mark": "✓",
+        "label": "live",
+        "text": "CurseForge's page, Wago's and GitHub's are the file"
+      },
+      {
+        "mark": "·",
+        "label": "others",
+        "text": "names Hearthtale, Lorekeeper's Codex, Yonder, Second Wind, Mealbook, Palaver, Goodwill. Tagged, not named: keyring, wow-locker"
+      },
+      {
+        "mark": "!",
+        "label": "deDE",
+        "text": "60/60 words, the kit's 79/79, flagged, 73 translations (30 stale)"
+      },
+      {
+        "mark": "!",
+        "label": "esES",
+        "text": "60/60 words, the kit's 79/79, flagged, 73 translations (30 stale)"
+      },
+      {
+        "mark": "·",
+        "label": "esMX",
+        "text": "esES's words, borrowed (its own names beside them)"
+      },
+      {
+        "mark": "✓",
+        "label": "frFR",
+        "text": "60/60 words, the kit's 79/79, 73 translations (0 stale)"
+      },
+      {
+        "mark": "!",
+        "label": "cold read",
+        "text": "authored text changed since v0.3.0 or the last cold read: deDE (1 file, since the cold read at 3cf0db2), esES (1 file, since the cold read at 3cf0db2). A cold read of each (the prose-reader), then bun addon-kit/coldread.ts yours-truly '<verdict>'"
+      },
+      {
+        "mark": "·",
+        "label": "cold read",
+        "text": "read cold, nothing authored changed since: esMX at 3cf0db2, frFR at 57305d9"
+      },
+      {
+        "mark": "✓",
+        "label": "CI",
+        "text": "success on HEAD"
+      },
+      {
+        "mark": "✓",
+        "label": "game data",
+        "text": "success"
+      },
+      {
+        "mark": "✓",
+        "label": "check",
+        "text": "passed on HEAD's tree"
+      },
+      {
+        "mark": "!",
+        "label": "review",
+        "text": "none recorded on HEAD: packet.ts, then the reviewer"
+      },
+      {
+        "mark": "✓",
+        "label": "test zip",
+        "text": "YoursTruly-v0.3.0.zip is what ships at HEAD (the test in the game is yours to say)"
+      },
+      {
+        "mark": "✓",
+        "label": "kit",
+        "text": "copy of 9e6c86c, on addon-kit's origin"
+      },
+      {
+        "mark": "✓",
+        "label": "stores",
+        "text": "CURSEFORGE_TOKEN, WAGO_API_TOKEN set"
+      }
+    ],
+    "verdict": "nothing ships since v0.3.0, and 1 in the way, 4 to look at"
+  }
+]

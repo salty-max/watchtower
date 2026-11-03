@@ -1,0 +1,106 @@
+{
+  "at": "2026-11-03T16:29:42.075Z",
+  "builds": [
+    {
+      "game": "classic",
+      "product": "wow_classic_era",
+      "pinned": "1.15.9.70576",
+      "latest": "1.15.9.70576",
+      "moved": false,
+      "alsoUnder": []
+    },
+    {
+      "game": "forever",
+      "product": "wowf",
+      "pinned": "1.60.1.70753",
+      "latest": "1.60.1.70753",
+      "moved": false,
+      "alsoUnder": []
+    }
+  ],
+  "databases": [
+    {
+      "name": "questie",
+      "repo": "Questie/QuestieDB",
+      "commit": "57931281737632202e9838f17efd5c3618d10f55",
+      "kind": "database",
+      "moved": true,
+      "head": {
+        "sha": "c5de61ab7c629132a772cccddf7f604ac48cecf9",
+        "date": "2026-11-03"
+      }
+    },
+    {
+      "name": "classicdb",
+      "repo": "cmangos/classic-db",
+      "commit": "28ef6259c782928b08a8dc9cacf6bc02e64f2b29",
+      "kind": "database",
+      "moved": true,
+      "head": {
+        "sha": "37eeeeb1d4c12f00ded1b542e758f71d6135d391",
+        "date": "2026-11-03"
+      }
+    }
+  ],
+  "ui": [
+    {
+      "name": "ui-classic",
+      "repo": "Gethe/wow-ui-source",
+      "branch": "classic_era",
+      "commit": "4192ac60067fc55566182291bc67c85dd9b6794d",
+      "build": "1.15.9.70576",
+      "kind": "ui",
+      "moved": false,
+      "head": {
+        "sha": "4192ac60067fc55566182291bc67c85dd9b6794d",
+        "date": "2026-10-26",
+        "build": "70576"
+      }
+    },
+    {
+      "name": "ui-forever",
+      "repo": "Gethe/wow-ui-source",
+      "branch": "forever",
+      "commit": "ca8368f2f2380cbe696854f7f2646387c278a61b",
+      "build": "1.60.1.70532",
+      "kind": "ui",
+      "moved": true,
+      "head": {
+        "sha": "aff0d8cd53bf4d9ef1c1dd2786b94461a276fb16",
+        "date": "2026-11-02",
+        "build": "70707"
+      },
+      "client": "1.60.1.70753",
+      "against": "behind"
+    },
+    {
+      "name": "ui-textures-classic",
+      "repo": "Gethe/wow-ui-textures",
+      "branch": "classic",
+      "commit": "312a6e61bab69370c65ccc0a08f1075d62196294",
+      "build": "1.13.5.34911",
+      "kind": "ui",
+      "moved": false,
+      "head": {
+        "sha": "312a6e61bab69370c65ccc0a08f1075d62196294",
+        "date": "2020-07-01",
+        "build": "34911"
+      }
+    },
+    {
+      "name": "ui-textures-live",
+      "repo": "Gethe/wow-ui-textures",
+      "branch": "live",
+      "commit": "d23deaf8f44a7d280dc974a5c9d5321c013db59b",
+      "build": "9.2.7.45114",
+      "kind": "ui",
+      "moved": false,
+      "head": {
+        "sha": "d23deaf8f44a7d280dc974a5c9d5321c013db59b",
+        "date": "2022-08-20",
+        "build": "45114"
+      }
+    }
+  ],
+  "moved": false
+}
