@@ -63,7 +63,7 @@ function Band({ L, onRefresh }: { L: Dict; onRefresh: () => void }) {
             {title}
           </span>
         }
-        intro={`Forever launches on ${at("weekday", { weekday: "long" })} at ${at("time", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}, Central European Time.`}
+        intro={`Forever launches on ${at("weekday", { weekday: "long" })} at ${at("time", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })} CET.`}
         action={
           <button type="button" className="btn btn-gold shrink-0" onClick={onRefresh} disabled={s.busy.length > 0}>
             {s.busy.length ? `Reading ${s.busy[0]}…` : "Read everything again"}
