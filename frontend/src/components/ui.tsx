@@ -82,15 +82,16 @@ export function Reasons({ v }: { v: Verdict }) {
   );
 }
 
-/** A note over the whole page: why it is the colour it is. */
+/** What a page could not read or read late (a failed or cached source, a source that has not answered): a flat line under the page's intro, so old numbers are never taken for new ones. */
 export function PageNote({ v }: { v: Verdict }) {
   if (!v.reasons.length) return null;
+  const edge = { green: "border-edge", amber: "border-amber", red: "border-blood", grey: "border-faint" }[v.light];
   return (
-    <div className="mb-5">
-      <Card light={v.light} title="This page">
-        <Reasons v={v} />
-      </Card>
-    </div>
+    <ul className={`mt-4 flex flex-col gap-0.5 border-l-2 pl-3 text-[13px] text-dim select-text ${edge}`}>
+      {v.reasons.map((r, i) => (
+        <li key={i}>{r}</li>
+      ))}
+    </ul>
   );
 }
 
