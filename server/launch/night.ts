@@ -1,15 +1,13 @@
-// Launch night inside Watchtower: the checklist (night.json, or addon-kit's own
-// launch-night.json while it is beside, so an edit there still counts), the
-// readings only launch night needs (the site and the inbox, the Forever
+// Launch night, the page of Watchtower that replaced launch.ts: the checklist
+// (night.json, data to amend without touching code), the readings only launch night needs (the site and the inbox, the Forever
 // database's coverage, the user's screenshots) and the view the Launch page
 // draws. The family's own readings (preflight, status, the board, the builds)
 // are the cells the other pages already have: one gather, not two. The rules
-// are launch/rules.ts, the ticks and notes live in the file launch.ts keeps
-// (addon-kit/.cache/launch-night.json), so either shows the same night.
+// are launch/rules.ts, the ticks and notes live in a file of Watchtower's own.
 import { Database } from "bun:sqlite";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { Cell, Def } from "../engine";
 import { LAUNCH_END } from "../rules";
 import { family } from "../sources";
@@ -25,18 +23,24 @@ export type Content = {
 
 export const ICLOUD_DRIVE = join(homedir(), "Library", "Mobile Documents", "com~apple~CloudDocs");
 
-export function loadContent(): Content {
-  const root = family();
-  const theirs = root && join(root, "addon-kit", "launch-night.json");
-  const file = theirs && existsSync(theirs) ? theirs : join(import.meta.dir, "night.json");
-  return JSON.parse(readFileSync(file, "utf8"));
-}
+export const loadContent = (): Content => JSON.parse(readFileSync(join(import.meta.dir, "night.json"), "utf8"));
 
-/** Where ticks and notes live: launch.ts's file, so the two programs share a night (LAUNCH_STATE moves it). */
-export function stateFile(demo: boolean, tmp: string): string {
-  if (process.env.LAUNCH_STATE) return process.env.LAUNCH_STATE;
-  const root = family();
-  return demo || !root ? join(tmp, "launch-night-demo.json") : join(root, "addon-kit", ".cache", "launch-night.json");
+/**
+ * Where ticks and notes live: ~/.cache/watchtower/launch-night.json
+ * (WATCHTOWER_STATE moves it). The night saved by launch.ts, in
+ * addon-kit/.cache/launch-night.json, is copied there the first time (never
+ * over a file that is already there), so no tick is lost.
+ */
+export function stateFile(demo: boolean, tmp: string, home = homedir(), env: Record<string, string | undefined> = process.env, legacy?: string): string {
+  if (env.WATCHTOWER_STATE) return env.WATCHTOWER_STATE;
+  if (demo) return join(tmp, "launch-night-demo.json");
+  const file = join(home, ".cache", "watchtower", "launch-night.json");
+  const old = legacy ?? (family() ? join(family() as string, "addon-kit", ".cache", "launch-night.json") : undefined);
+  if (old && !existsSync(file) && existsSync(old)) {
+    mkdirSync(dirname(file), { recursive: true });
+    copyFileSync(old, file);
+  }
+  return file;
 }
 
 // ── the readings only launch night needs ────────────────────────────────────

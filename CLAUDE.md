@@ -26,7 +26,7 @@ its section 9).
 
 ```bash
 bash scripts/check.sh                                          # tsc, bun test server, the window's build, gofmt, vet, go test
-scripts/build.sh                                               # Watchtower.app into ~/Applications (the window in a browser: bun run dev in frontend/, with the server --demo)
+scripts/build.sh                                               # Watchtower.app into /Applications (the window in a browser: bun run dev in frontend/, with the server --demo)
 bun ../addon-kit/q.ts check -- bash scripts/check.sh           # the same, quiet, stamping the tree for the push (harness.check)
 ```
 
@@ -39,12 +39,12 @@ clone): q stamps only the repository's own check.
   store page, merges a pull request, runs a workflow, sets a secret or starts
   a session. The server will run an allow-list of argv templates, never a shell
   line. Today `server/sources.test.ts` holds the sources table to that.
-- **Launch night is part of the app** (the user's call, 3 November 2026), as
-  copies in `server/launch/`. `addon-kit/launch.ts`, `launch-rules.ts`,
-  `launch-ui.ts`, `launch-page.*`, `launch-night.json` and `launch.test.ts`
-  are still not edited until 5 November 2026 has happened (they are the
-  Terminal fallback on the night), and are deleted only on the user's word
-  afterwards. Between 4 November 22:00 and 5 November 06:00 CET the sources
+- **Launch night is a page of the app** (the user's call, 3 November 2026,
+  made final that evening): `addon-kit/launch.ts` and its files are gone, and
+  Watchtower is the only launch page. Its checklist is `server/launch/night.json`
+  (data), its rules `server/launch/rules.ts`, its ticks and notes
+  `~/.cache/watchtower/launch-night.json` (the night `launch.ts` saved is copied
+  there once). Between 4 November 22:00 and 5 November 06:00 CET the sources
   launch night does not read stay paused.
 - The server listens on 127.0.0.1 only, with a key per start passed by env,
   never in argv or a URL. The page never receives a store cookie or a token.

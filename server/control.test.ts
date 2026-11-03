@@ -65,15 +65,12 @@ describe("the server", () => {
     }
     expect(ran.length).toBe(1);
   });
-  test("in launch night's window a store dry run (the cookies) waits, a card's status does not", async () => {
+  test("a button still works in launch night's window (the user's own press), while the store timer waits", async () => {
     ran.length = 0;
-    const inside = Date.parse("2026-11-05T00:00:00Z");
-    const { h } = make({ clock: () => inside });
-    expect((await ask(h, "/api/action", { method: "POST", headers: keyed, body: { name: "store-dry", repo: "yonder" } })).status).toBe(400);
-    expect(ran).toEqual([]);
+    const { h } = make({ clock: () => Date.parse("2026-11-05T00:00:00Z") });
+    expect((await ask(h, "/api/action", { method: "POST", headers: keyed, body: { name: "store-dry", repo: "yonder" } })).status).toBe(200);
     expect((await ask(h, "/api/action", { method: "POST", headers: keyed, body: { name: "card", id: "a-card", status: "done" } })).status).toBe(200);
-    const { h: after } = make({ clock: () => inside + 7 * 3600_000 });
-    expect((await ask(after, "/api/action", { method: "POST", headers: keyed, body: { name: "store-dry", repo: "yonder" } })).status).toBe(200);
+    expect(ran).toHaveLength(2);
   });
   test("a card's status refreshes the board afterwards", async () => {
     ran.length = 0;

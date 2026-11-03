@@ -1,8 +1,8 @@
-// Launch night's rules: a copy of addon-kit/launch-rules.ts (addon-kit 1505a38, taken 3 November 2026 when launch night joined Watchtower). launch.ts stays as it is until 5 November has happened, and launch.test.ts's twin here (night.test.ts) holds the two copies to the same answers; after that this is the only one.
+// Launch night's rules: green, amber, red, the ticks and notes file, the notes as Markdown. Moved here from addon-kit/launch-rules.ts (1505a38) on 3 November 2026, when Watchtower became the launch page. Pure functions and one small file, so night.test.ts reads them without a server.
 /**
- * Launch night's rules (launch.ts): what is green, amber or red,
+ * Launch night's rules (night.ts): what is green, amber or red,
  * the ticks and notes file, the notes as Markdown. Pure functions and one small
- * file, so launch.test.ts reads them without a server.
+ * file, so night.test.ts reads them without a server.
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";

@@ -2,14 +2,9 @@
 // Pure functions over the tools' JSON (testdata/ holds real output), so
 // rules.test.ts reads them without a server.
 
-export type Light = "green" | "amber" | "red" | "grey";
+import { worst, type Light } from "./launch/rules";
+export { worst, type Light };
 export type Verdict = { light: Light; reasons: string[] };
-
-// Launch night's `worst` (addon-kit/launch-rules.ts): CI checks this repository out alone, so
-// it can't import across to addon-kit. rules.test.ts holds the two to the same answers where addon-kit is beside it.
-// (grey, nothing read, ranks above green: an unread source never passes for ready)
-const RANK: Record<Light, number> = { green: 0, grey: 1, amber: 2, red: 3 };
-export const worst = (...lights: Light[]): Light => lights.reduce((a, b) => (RANK[b] > RANK[a] ? b : a), "green" as Light);
 
 // ── the tools' JSON, as far as the rules read it ────────────────────────────
 export type Row = { mark: string; label: string; text: string };

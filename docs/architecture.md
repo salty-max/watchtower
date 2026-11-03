@@ -88,26 +88,27 @@ plain page. `docs/probe.md` has the probe that decided notifications and PATH.
   `src/lib/api.tsx` polls `/api/state` every 10 s. `bun run dev` in
   `frontend/` shows it in a browser with `bun server/control.ts --demo`
   (`WATCHTOWER_KEY=dev`, the Vite proxy adds the key as the shell does).
-- `server/launch/`: launch night inside. `rules.ts` is `addon-kit/launch-rules.ts`
-  copied verbatim (first line says so), `night.json` the checklist (the
-  addon-kit file is read instead while it is beside), `night.ts` the
-  readings only launch night needs (the site and inbox, forever.db coverage,
-  the screenshots in iCloud Drive) and `launchView`, built on the family's own
-  cells (preflight, status, board, and `latest.ts --json` for the Forever
-  build), so there is one gather. Ticks and notes live in
-  `addon-kit/.cache/launch-night.json`, the file `launch.ts` keeps, so either
-  shows the same night. `night.test.ts` holds the copy to the original while
-  addon-kit is beside. Routes: `/api/change`, `/api/shot`, `/api/notes`.
+- `server/launch/`: launch night, the page that replaced `addon-kit/launch.ts`
+  (removed 3 November 2026, the evening before launch). `rules.ts` holds its
+  rules and the ticks and notes file, `night.json` the checklist (data: amend
+  it without touching code), `night.ts` the readings only launch night needs
+  (the site and inbox, forever.db coverage, the screenshots in iCloud Drive)
+  and `launchView`, built on the family's own cells (preflight, status, board,
+  and `latest.ts --json` for the Forever build), so there is one gather. Ticks
+  and notes live in `~/.cache/watchtower/launch-night.json`
+  (`WATCHTOWER_STATE` moves it); the night `launch.ts` saved in
+  `addon-kit/.cache/launch-night.json` is copied there the first time, never
+  over a file already there. The notes are the page's "Copy the notes"
+  button, or `bun watchtower/server/control.ts notes`. Routes: `/api/change`,
+  `/api/shot`, `/api/notes`.
 - Launch night's window (4 November 22:00 to 5 November 06:00 CET): what launch
   night reads (preflight, status, board, latest and its own three) still
   runs, faster from the evening before (board 1 min, status 2); the data pull
-  requests, the store dry run timer and the zips wait, and an action from a
-  button still works.
-- `scripts/build.sh`: the app into `~/Applications/Watchtower.app` (ad hoc
+  requests, the store timer and the zips wait, and an action from a button
+  (a store dry run, a card's status) still works: it is the user's own press.
+- `scripts/build.sh`: the app into `/Applications/Watchtower.app` (first built into `~/Applications`, which Finder's sidebar does not show) (ad hoc
   signed, the old one to the Trash). No notifications yet (M3, by osascript).
 
 ## Not yet
 
-Notifications, quiet hours, mutes and launch at login (M3). Deleting
-`launch.ts` and its files (after 5 November has happened and the user says
-so: `launch.ts` stays the fallback on the night itself).
+Notifications, quiet hours, mutes and launch at login (M3).

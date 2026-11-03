@@ -48,7 +48,7 @@
       "id": "t-morning",
       "at": "2026-11-05T07:00:00Z",
       "title": "Morning: notes into the patch wave",
-      "detail": "bun addon-kit/launch.ts notes prints the night. A session fixes each, one patch per affected addon, your go once for the wave."
+      "detail": "Copy the notes from the Launch page (or bun watchtower/server/control.ts notes) to print the night. A session fixes each, one patch per affected addon, your go once for the wave."
     },
     {
       "id": "t-pins",

@@ -38,7 +38,7 @@ export async function readJson(run: Exec, s: Source): Promise<unknown> {
 
 /** What launch night reads, and so what runs in its window. */
 export const LAUNCH_READS = new Set(["preflight", "status", "board", "latest"]);
-/** From the evening before launch to the morning after, the readings launch night leans on come faster (launch.ts's own pace). */
+/** From the evening before launch to the morning after, the readings launch night leans on come faster (launch night's own pace). */
 const FAST = { board: 1, status: 2 } as Record<string, number>;
 const fast = (now: number) => now >= Date.parse("2026-11-04T12:00:00Z") && now < Date.parse("2026-11-06T06:00:00Z");
 

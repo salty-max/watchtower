@@ -12,7 +12,7 @@ const VERDICT: Record<Light, [string, string, string]> = {
 };
 const STATUSES = ["waiting-test", "waiting-review", "ready-to-push", "done"];
 
-/** Launch night: the nine addons' readiness and the in-game checks, the night's timeline, the systems, the notes and the open questions. One page with the others, and the same ticks and notes file launch.ts keeps. */
+/** Launch night: the nine addons' readiness and the in-game checks, the night's timeline, the systems, the notes and the open questions. One page with the others, its ticks and notes in ~/.cache/watchtower/launch-night.json. */
 export function Launch() {
   const { state, refreshAll, toast } = useApp();
   const L = state!.launch as Dict;

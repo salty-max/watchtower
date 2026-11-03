@@ -26,7 +26,6 @@ import { demoLaunchCells, launchDefs, loadContent, notesMarkdown, stateFile, ICL
 import * as night from "./launch/rules";
 import { Engine, exec as realExec, toolDefs, type Cell, type Def, type Exec } from "./engine";
 import { action, safe } from "./actions";
-import { quiet } from "./rules";
 import { view } from "./view";
 import { listZips } from "./zips";
 
@@ -92,8 +91,6 @@ export function handler(deps: Deps, key: string, port: number) {
       const a = action(body);
       if ("error" in a) return respond({ error: a.error }, 400);
       if (!safe(a)) return respond({ error: "not allowed" }, 400);
-      // (a store dry run reads the store pages with the user's cookies: launch night's window keeps them to itself, a card's status is fine)
-      if (!deps.demo && a.argv[1]?.endsWith("store.ts") && quiet((deps.clock ?? Date.now)())) return respond({ error: "launch night's window: no store page is read until 5 November 06:00 CET" }, 400);
       const r = await deps.exec(a.argv, a.timeoutSec * 1000);
       if (body.name === "card") await deps.engine.refresh("board");
       return respond({ ok: r.code === 0 && !r.timedOut, out: r.timedOut ? "gave up waiting" : r.out.slice(-6000) });

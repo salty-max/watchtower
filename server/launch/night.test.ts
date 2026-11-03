@@ -1,13 +1,11 @@
-// Launch night inside Watchtower: the rules (the same answers as addon-kit's launch.test.ts, which holds
-// launch-rules.ts to them), the state file, and the Launch page's view from the family's cells.
+// Launch night inside Watchtower: the rules, the state file, and the Launch page's view from the family's cells.
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Cell } from "../engine";
-import { family } from "../sources";
 import { demoCells } from "../demo";
-import { demoLaunchCells, foreverBuild, launchView, loadContent, screenshots } from "./night";
+import { demoLaunchCells, foreverBuild, launchView, loadContent, screenshots, stateFile } from "./night";
 import { view } from "../view";
 import * as r from "./rules";
 
@@ -119,22 +117,6 @@ describe("changes from the page are checked, never trusted", () => {
 });
 
 
-describe("the copies", () => {
-  const root = family();
-  const theirs = (f: string) => (root ? join(root, "addon-kit", f) : "");
-  test("the rules are launch.ts's own until 5 November has happened", () => {
-    const f = theirs("launch-rules.ts");
-    if (!f || !existsSync(f)) return; // (the originals go after launch night)
-    const mine = readFileSync(join(import.meta.dir, "rules.ts"), "utf8");
-    expect(mine.slice(mine.indexOf("\n") + 1)).toBe(readFileSync(f, "utf8"));
-  });
-  test("the checklist reads addon-kit's file when it is beside, and the copy is the same until someone edits one", () => {
-    const f = theirs("launch-night.json");
-    if (!f || !existsSync(f)) return;
-    expect(JSON.parse(readFileSync(join(import.meta.dir, "night.json"), "utf8"))).toEqual(loadContent());
-  });
-});
-
 describe("the content and the view", () => {
   const content = loadContent();
   const at = Date.parse(content.launch) - 3600_000;
@@ -204,5 +186,29 @@ describe("after launch night", () => {
     expect(after.pages.find((p) => p.id === "launch")?.light).toBe("red");
     const without = view(cells, [], Date.parse("2026-11-07T12:00:00Z"));
     expect(after.overall).toBe(without.overall);
+  });
+});
+
+describe("the ticks and notes file", () => {
+  const home = () => mkdtempSync(join(tmpdir(), "wt-home-"));
+  test("it lives under Watchtower's own cache folder, and WATCHTOWER_STATE moves it", () => {
+    expect(stateFile(false, "/tmp", "/h", {}, "/nowhere/s.json")).toBe("/h/.cache/watchtower/launch-night.json");
+    expect(stateFile(true, "/tmp", "/h", {})).toBe("/tmp/launch-night-demo.json");
+    expect(stateFile(false, "/tmp", "/h", { WATCHTOWER_STATE: "/x/s.json" })).toBe("/x/s.json");
+  });
+  test("a night saved by launch.ts (addon-kit/.cache) moves over the first time, and never over a newer file", () => {
+    const h = home();
+    const legacy = join(h, "legacy.json");
+    writeFileSync(legacy, JSON.stringify({ ticks: { "yonder/tab": "ok" }, steps: {}, answers: {}, notes: [] }));
+    const file = stateFile(false, h, h, {}, legacy);
+    expect(r.readState(file).ticks).toEqual({ "yonder/tab": "ok" });
+    expect(readFileSync(legacy, "utf8")).toContain("yonder/tab"); // (copied, not moved: nothing is lost)
+    writeFileSync(file, JSON.stringify({ ticks: { "keyring/drawer": "broken" }, steps: {}, answers: {}, notes: [] }));
+    expect(r.readState(stateFile(false, h, h, {}, legacy)).ticks).toEqual({ "keyring/drawer": "broken" });
+  });
+  test("no legacy file is no error", () => {
+    const h = home();
+    mkdirSync(h, { recursive: true });
+    expect(r.readState(stateFile(false, h, h, {}, join(h, "none.json")))).toEqual(r.emptyState());
   });
 });

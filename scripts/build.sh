@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Builds Watchtower.app (macOS, cgo) and puts it in ~/Applications:
+# Builds Watchtower.app (macOS, cgo) and puts it in /Applications:
 #
-#   scripts/build.sh            build, and install (the old app to the Trash)
+#   scripts/build.sh            build, and install into /Applications (the old app to the Trash)
 #   scripts/build.sh --no-install   build only, into dist/
 #
 # The app is the shell and the window's pages: the Bun server and the family's tools stay in
@@ -53,9 +53,14 @@ PLIST
 codesign --force --deep --sign - "$APP"
 echo "built dist/Watchtower.app ($VERSION)"
 [ $INSTALL = 1 ] || exit 0
-mkdir -p "$HOME/Applications"
-DEST="$HOME/Applications/Watchtower.app"
+# /Applications (Finder's and Spotlight's: ~/Applications is not in the sidebar), group-writable for an admin user, no sudo
+DEST="/Applications/Watchtower.app"
 pkill -x watchtower 2>/dev/null && sleep 1 || true
-if [ -e "$DEST" ]; then mv "$DEST" "$HOME/.Trash/Watchtower-$(date +%Y%m%d-%H%M%S).app"; fi
+STAMP=$(date +%Y%m%d-%H%M%S)
+# the first build of 3 November 2026 went to ~/Applications: it goes too
+[ -e "$HOME/Applications/Watchtower.app" ] && mv "$HOME/Applications/Watchtower.app" "$HOME/.Trash/Watchtower-home-$STAMP.app"
+if [ -e "$DEST" ]; then mv "$DEST" "$HOME/.Trash/Watchtower-$STAMP.app"; fi
 ditto "$APP" "$DEST"
+# (built here, so never downloaded: nothing to quarantine, but drop the flag if a copy ever carried one)
+xattr -dr com.apple.quarantine "$DEST" 2>/dev/null || true
 echo "installed $DEST"
