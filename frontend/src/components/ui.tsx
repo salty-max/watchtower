@@ -3,10 +3,9 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useApp, type Light, type Verdict } from "@/lib/api";
 import { WORD } from "@/lib/format";
 
-/** A light's dot. */
+/** A light's mark: its shape says what its colour says. */
 export function Dot({ light, className = "" }: { light: Light; className?: string }) {
-  const bg = { green: "bg-ok", amber: "bg-amber", red: "bg-blood", grey: "bg-faint" }[light];
-  return <span role="img" aria-label={WORD[light]} title={WORD[light]} className={`inline-block size-2.5 shrink-0 rounded-full ${bg} ${className}`} />;
+  return <span role="img" aria-label={WORD[light]} title={WORD[light]} className={`mark mark-${light} ${className}`} />;
 }
 
 /** A page's title and what it is for. */
@@ -161,4 +160,13 @@ export function useNow(every = 30_000): number {
     return () => clearInterval(id);
   }, [every]);
   return now;
+}
+
+/** The place at the right end of every red or amber row for the "start a fix session" button (ideas/watchtower-fix-sessions.md). It holds the copy-prompt button today. `fix` is the server's preview for the row (server/fix.ts), absent when the light is not one a session can fix. */
+export function FixSlot({ id, prompt, fix, label = "Copy prompt" }: { id: string; prompt?: string; fix?: Record<string, unknown>; label?: string }) {
+  return (
+    <span data-fix-slot={id} data-fixable={fix ? "true" : undefined} className="inline-flex items-center gap-2">
+      <CopyButton text={prompt} label={label} />
+    </span>
+  );
 }

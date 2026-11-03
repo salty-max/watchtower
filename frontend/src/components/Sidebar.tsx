@@ -1,52 +1,45 @@
-import { Database, FileArchive, Package, Radio, Rocket, Store } from "lucide-react";
 import { Dot, useNow } from "@/components/ui";
-import { useApp } from "@/lib/api";
-import { ago, WORD } from "@/lib/format";
+import { useApp, type Light } from "@/lib/api";
+import { PAGE_NAME } from "@/lib/queue";
+import { ago } from "@/lib/format";
 
-export const ICONS = { launch: Rocket, releases: Package, data: Database, stores: Store, zips: FileArchive } as const;
+/** The pages in the window's own order: the answer first, the night last. */
+export const ORDER = ["overview", "releases", "data", "stores", "zips", "launch"];
 
-/** The window's left side: the tower and the name (under macOS's traffic lights), the pages with their lights, and how fresh the readings are. */
+/** The window's left side: the name (under macOS's traffic lights), the pages with their lights, how fresh the readings are. */
 export function Sidebar({ page, go }: { page: string; go: (id: string) => void }) {
-  const { state, shell, lastOk } = useApp();
+  const { state, lastOk } = useApp();
   const now = useNow(15_000);
   if (!state) return null;
-  const oldest = Math.min(...Object.values(state.ages).map((a) => a.at));
+  const light = (id: string): Light => (id === "overview" ? state.overall : (state.pages.find((p) => p.id === id)?.light ?? "grey"));
+  const pages = ORDER.filter((id) => id === "overview" || state.pages.some((p) => p.id === id));
+  const oldest = Math.min(...Object.values(state.ages).filter((a) => !a.paused).map((a) => a.at));
   const stale = now - lastOk > 60_000;
   const cached = Object.values(state.ages).filter((a) => a.cached && !a.error && !a.paused);
   return (
-    <aside className="drag flex w-56 shrink-0 flex-col border-r border-edge bg-stone/80 pt-12">
-      <div className="flex items-center gap-3 px-5 pb-6">
-        <img src="/icon.png" alt="" width={40} height={40} className="size-10 rounded-[9px] shadow-[0_0_14px_rgb(242_193_78/0.25)]" />
-        <div className="min-w-0">
-          <p className="title text-lg leading-tight">Watchtower</p>
-          <p className="text-xs text-faint">{WORD[state.overall]}</p>
-        </div>
+    <aside className="drag flex w-48 shrink-0 flex-col border-r border-edge pt-12 max-md:w-40">
+      <div className="flex items-center gap-2.5 px-5 pb-6">
+        <img src="/icon.png" alt="" width={28} height={28} className="size-7 rounded-md" />
+        <p className="title text-[17px] leading-tight">Watchtower</p>
       </div>
-      <nav className="no-drag flex flex-col gap-0.5 px-3" aria-label="Watchtower">
-        {state.pages.map((p) => {
-          const Icon = ICONS[p.id as keyof typeof ICONS] ?? Radio;
-          return (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => go(p.id)}
-              aria-current={page === p.id ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${page === p.id ? "bg-gold/10 text-gold" : "text-dim hover:bg-white/[0.04] hover:text-parchment"}`}
-            >
-              <Icon className="size-4 shrink-0" aria-hidden />
-              <span className="flex-1">{p.label}</span>
-              <Dot light={p.light} />
-            </button>
-          );
-        })}
+      <nav className="no-drag flex flex-col" aria-label="Watchtower">
+        {pages.map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => go(id)}
+            aria-current={page === id ? "page" : undefined}
+            className={`flex items-center justify-between border-l-2 px-5 py-[7px] text-left transition-colors ${page === id ? "border-gold bg-white/[0.03] text-parchment" : "border-transparent text-dim hover:text-parchment"}`}
+          >
+            {PAGE_NAME[id]}
+            <Dot light={light(id)} />
+          </button>
+        ))}
       </nav>
-      <div className="mt-auto px-5 pb-5">
-        <p className="flex items-center gap-2 text-[13px]">
-          <span aria-hidden className={`size-2 shrink-0 rounded-full ${stale ? "bg-blood" : state.busy.length ? "pulse-dot bg-gold" : "pulse-dot bg-ok"}`} />
-          <span className={stale ? "text-blood" : "text-dim"}>{stale ? "Lost the server" : cached.length ? `Cached ${ago(Math.min(...cached.map((a) => a.at)), now)}, reading again…` : state.busy.length ? `Reading ${state.busy[0]}…` : `Read ${ago(oldest, now)}`}</span>
-        </p>
-        <p className="mt-2 text-xs leading-snug text-faint">{shell ? "Closing the window keeps Watchtower in the menu bar. Quit is in its menu." : "In a browser: the app itself is in the menu bar."}</p>
-      </div>
+      <p className="mt-auto flex items-start gap-2 px-5 pb-5 text-xs text-faint">
+        <span aria-hidden className={`mt-1 size-1.5 shrink-0 rounded-full ${stale ? "bg-blood" : state.busy.length || cached.length ? "pulse-dot bg-gold" : "bg-ok/60"}`} />
+        <span className={stale ? "text-blood" : ""}>{stale ? "Lost the server" : cached.length ? `Cached ${ago(Math.min(...cached.map((a) => a.at)), now)}, reading again` : state.busy.length ? `Reading ${state.busy[0]}` : `Read ${ago(oldest, now)}`}</span>
+      </p>
     </aside>
   );
 }
