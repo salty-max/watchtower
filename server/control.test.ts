@@ -1,7 +1,11 @@
 // The server: Host, key, origin, method, the actions' commands injected (none run), the demo's view.
 import { describe, expect, test } from "bun:test";
 import { handler, type Deps } from "./control";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { demoCells } from "./demo";
+import { demoLaunchCells, loadContent } from "./launch/night";
 import { Engine } from "./engine";
 import { view } from "./view";
 
@@ -19,19 +23,11 @@ const ask = (h: ReturnType<typeof make>["h"], path: string, init: { method?: str
 const keyed = { "x-watchtower-key": KEY };
 
 describe("the server", () => {
-  test("the page is served with a frame ban and a CSP, and carries the key", async () => {
-    const res = await ask(make().h, "/");
-    expect(res.status).toBe(200);
-    expect(res.headers.get("x-frame-options")).toBe("DENY");
-    expect(res.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
-    expect(res.headers.get("content-security-policy")).toContain("default-src 'none'");
-    expect(await res.text()).toContain(JSON.stringify(KEY));
-  });
   test("another Host name is refused, even for the page", async () => {
     const { h } = make();
-    expect((await ask(h, "/", { headers: { host: "evil.example:4999" } })).status).toBe(403);
-    expect((await ask(h, "/", { headers: { host: "127.0.0.1:1" } })).status).toBe(403);
-    expect((await ask(h, "/", { headers: { host: `localhost:${PORT}` } })).status).toBe(200);
+    expect((await ask(h, "/api/state", { headers: { host: "evil.example:4999", ...keyed } })).status).toBe(403);
+    expect((await ask(h, "/api/state", { headers: { host: "127.0.0.1:1", ...keyed } })).status).toBe(403);
+    expect((await ask(h, "/api/state", { headers: { host: `localhost:${PORT}`, ...keyed } })).status).toBe(200);
   });
   test("no key or a wrong one is 403 on every call", async () => {
     const { h } = make();
@@ -69,13 +65,13 @@ describe("the server", () => {
     }
     expect(ran.length).toBe(1);
   });
-  test("in launch night's window an action runs nothing, the demo aside", async () => {
+  test("in launch night's window a store dry run (the cookies) waits, a card's status does not", async () => {
     ran.length = 0;
     const inside = Date.parse("2026-11-05T00:00:00Z");
     const { h } = make({ clock: () => inside });
-    const res = await ask(h, "/api/action", { method: "POST", headers: keyed, body: { name: "store-dry", repo: "yonder" } });
-    expect(res.status).toBe(400);
+    expect((await ask(h, "/api/action", { method: "POST", headers: keyed, body: { name: "store-dry", repo: "yonder" } })).status).toBe(400);
     expect(ran).toEqual([]);
+    expect((await ask(h, "/api/action", { method: "POST", headers: keyed, body: { name: "card", id: "a-card", status: "done" } })).status).toBe(200);
     const { h: after } = make({ clock: () => inside + 7 * 3600_000 });
     expect((await ask(after, "/api/action", { method: "POST", headers: keyed, body: { name: "store-dry", repo: "yonder" } })).status).toBe(200);
   });
@@ -104,5 +100,49 @@ describe("the demo", () => {
     const players = v.data.prs.find((p) => p.kind === "players");
     expect(players?.verdict.light).toBe("amber");
     expect(players?.prompt).toContain("Players");
+  });
+
+  describe("launch night's routes", () => {
+    const dir = mkdtempSync(join(tmpdir(), "wt-night-"));
+    const content = loadContent();
+    const night = { content, stateFile: join(dir, "s.json"), shotsDir: dir };
+    const withNight = () => {
+      const m = make({ night });
+      m.engine.cells = { ...demoCells(), ...demoLaunchCells(content) };
+      return m;
+    };
+    test("the state carries the Launch page, and without launch night there is none", async () => {
+      const v = (await (await ask(withNight().h, "/api/state", { headers: keyed })).json()) as { launch?: { addons: unknown[] }; pages: { id: string }[] };
+      expect(v.launch?.addons).toHaveLength(9);
+      expect(v.pages.map((p) => p.id)).toContain("launch");
+      const bare = (await (await ask(make().h, "/api/state", { headers: keyed })).json()) as { launch?: unknown };
+      expect(bare.launch).toBeUndefined();
+    });
+    test("a tick is saved, checked, and shows on the Launch page", async () => {
+      const { h } = withNight();
+      expect((await ask(h, "/api/change", { method: "POST", headers: keyed, body: { op: "tick", key: "keyring/drawer", value: "broken" } })).status).toBe(200);
+      const v = (await (await ask(h, "/api/state", { headers: keyed })).json()) as { launch: { addons: { id: string; light: string }[] } };
+      expect(v.launch.addons.find((a) => a.id === "keyring")?.light).toBe("red");
+      expect((await ask(h, "/api/change", { method: "POST", headers: keyed, body: { op: "tick", key: "bad", value: "ok" } })).status).toBe(400);
+      expect((await ask(h, "/api/change", { method: "POST", body: { op: "tick", key: "a/b", value: "ok" } })).status).toBe(403);
+    });
+    test("the notes come out as Markdown", async () => {
+      const { h } = withNight();
+      const res = await ask(h, "/api/notes", { headers: keyed });
+      expect(await res.text()).toContain("# Launch night");
+      expect((await ask(h, "/api/notes")).status).toBe(403);
+    });
+    test("a screenshot is served only if the engine listed it, never by a path", async () => {
+      const { h, engine } = withNight();
+      engine.cells["launch-shots"] = { at: 0, ms: 0, data: [{ name: "a.png", mtime: 1 }] };
+      await Bun.write(join(dir, "a.png"), "png");
+      await Bun.write(join(dir, "secret.txt"), "no");
+      const ok = await ask(h, "/api/shot?f=a.png", { headers: keyed });
+      expect(ok.status).toBe(200);
+      expect(await ok.text()).toBe("png");
+      expect((await ask(h, "/api/shot?f=secret.txt", { headers: keyed })).status).toBe(404);
+      expect((await ask(h, "/api/shot?f=..%2Fa.png", { headers: keyed })).status).toBe(404);
+      expect((await ask(h, "/api/shot?f=a.png")).status).toBe(403);
+    });
   });
 });

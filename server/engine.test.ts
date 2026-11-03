@@ -1,6 +1,6 @@
 // The engine: one flight at a time, an old answer kept (and marked) when the next fails, launch night's window.
 import { describe, expect, test } from "bun:test";
-import { Engine, readJson } from "./engine";
+import { Engine, readJson, toolDefs } from "./engine";
 import { view } from "./view";
 
 const NOON = Date.parse("2026-11-03T12:00:00Z");
@@ -57,6 +57,27 @@ describe("the engine", () => {
     now = NIGHT + 7 * 3600_000;
     await e.refresh("a");
     expect(n).toBe(2);
+  });
+});
+
+describe("launch night is Watchtower's own page", () => {
+  test("what launch night reads still runs in its window, the cookie-bearing and heavier sources wait", async () => {
+    const defs = toolDefs(async () => ({ out: "[]", code: 0, timedOut: false }), () => NIGHT);
+    const e = new Engine(defs, () => NIGHT);
+    for (const id of ["preflight", "status", "board", "latest"]) {
+      await e.refresh(id);
+      expect(e.cells[id].paused).toBeUndefined();
+    }
+    for (const id of ["stores", "data-prs"]) {
+      await e.refresh(id);
+      expect(e.cells[id].paused).toBe(true);
+    }
+  });
+  test("the board and status are read faster from the evening before launch, then slow again", () => {
+    const at = (iso: string) => (toolDefs(async () => ({ out: "[]", code: 0, timedOut: false }), () => Date.parse(iso)).board.every as () => number)();
+    expect(at("2026-11-03T12:00:00Z")).toBe(5 * 60_000);
+    expect(at("2026-11-04T23:00:00Z")).toBe(60_000);
+    expect(at("2026-11-07T12:00:00Z")).toBe(5 * 60_000);
   });
 });
 

@@ -1,5 +1,6 @@
 # Every push to main and every pull request: the server typechecks and its
-# tests pass (the Go shell joins at M2, with the macOS runner it needs).
+# tests pass, and the Go shell (cgo, so the macOS runner) is formatted, vetted
+# and tested.
 name: CI
 
 on:
@@ -12,8 +13,11 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bash scripts/check.sh

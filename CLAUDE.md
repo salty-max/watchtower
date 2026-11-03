@@ -2,8 +2,8 @@
 
 The addon family's control centre (salty-max/watchtower, private, not created
 on GitHub yet): a macOS menu-bar app, a Go and Wails v3 shell around a Bun
-server, that will show releases, the daily data pull requests, store pages and
-test zips as lights (M0 and M1 are built: the sources table, the tools' JSON, the server and the four pages in a browser). Read the family's CLAUDE.md
+server, that shows launch night, releases, the daily data pull requests, store
+pages and test zips as lights (M0 to M2 are built). Read the family's CLAUDE.md
 (`~/code/wow-addons/CLAUDE.md`) first, and the plan,
 `../ideas/control-centre.md` (approved 3 November 2026, name and defaults in
 its section 9).
@@ -14,6 +14,9 @@ its section 9).
 |---|---|
 | The plan, the milestones (M0 groundwork, M1 server and pages, M2 shell, M3 notifications, M4 launch night as a mode) | `../ideas/control-centre.md` |
 | What exists, file by file | `docs/architecture.md` |
+| The M2 probe (notifications, PATH) | `docs/probe.md` |
+| The window (React, as Ravenpost) | `frontend/` |
+| Launch night inside the app | `server/launch/` |
 | Run the server (`--demo` first) | `bun watchtower/server/control.ts [--demo]` from the family folder |
 | The lights' rules, the allow-list | `server/rules.ts`, `server/actions.ts` (tests beside them) |
 | The tools it reads (argv lists, `--json`, the words that may never appear) | `server/sources.ts`, `server/sources.test.ts` |
@@ -22,7 +25,8 @@ its section 9).
 ## Commands
 
 ```bash
-bash scripts/check.sh                                          # tsc, bun test server (and Go's, once go.mod exists)
+bash scripts/check.sh                                          # tsc, bun test server, the window's build, gofmt, vet, go test
+scripts/build.sh                                               # Watchtower.app into ~/Applications (the window in a browser: bun run dev in frontend/, with the server --demo)
 bun ../addon-kit/q.ts check -- bash scripts/check.sh           # the same, quiet, stamping the tree for the push (harness.check)
 ```
 
@@ -35,12 +39,13 @@ clone): q stamps only the repository's own check.
   store page, merges a pull request, runs a workflow, sets a secret or starts
   a session. The server will run an allow-list of argv templates, never a shell
   line. Today `server/sources.test.ts` holds the sources table to that.
-- **Launch night's files are not edited until 5 November 2026 has happened**:
-  `addon-kit/launch.ts`, `launch-rules.ts`, `launch-ui.ts`, `launch-page.*`,
-  `launch-night.json`, `launch.test.ts`. The app only reads them
-  (`launch-rules.ts`'s `worst` is copied in `server/rules.ts`, a test holds it
-  to the original). It runs no source at all between 4 November
-  22:00 and 5 November 06:00 CET.
+- **Launch night is part of the app** (the user's call, 3 November 2026), as
+  copies in `server/launch/`. `addon-kit/launch.ts`, `launch-rules.ts`,
+  `launch-ui.ts`, `launch-page.*`, `launch-night.json` and `launch.test.ts`
+  are still not edited until 5 November 2026 has happened (they are the
+  Terminal fallback on the night), and are deleted only on the user's word
+  afterwards. Between 4 November 22:00 and 5 November 06:00 CET the sources
+  launch night does not read stay paused.
 - The server listens on 127.0.0.1 only, with a key per start passed by env,
   never in argv or a URL. The page never receives a store cookie or a token.
 - The tools stay where they are (addon-kit, wow-data): a missing field is

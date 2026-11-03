@@ -4,3 +4,7 @@
 # logs and caches of a run
 .cache/
 node_modules/
+# the window's build and its packages (frontend/)
+/frontend/dist/*
+!/frontend/dist/.gitkeep
+/frontend/node_modules/

@@ -259,8 +259,9 @@ export function zips(repos: Repo[], folder: Zip[] | undefined): ZipLine[] {
 }
 
 // ── the summary: one light per page, the tray's colour ──────────────────────
-export type PageId = "releases" | "data" | "stores" | "zips";
+export type PageId = "launch" | "releases" | "data" | "stores" | "zips";
 export const PAGES: { id: PageId; label: string }[] = [
+  { id: "launch", label: "Launch night" },
   { id: "releases", label: "Releases" },
   { id: "data", label: "Data" },
   { id: "stores", label: "Stores" },
@@ -268,7 +269,7 @@ export const PAGES: { id: PageId; label: string }[] = [
 ];
 
 /** The tray icon's colour and the page the window opens on: the worst page, the first of them on a tie. */
-export function summary(lights: Record<PageId, Light>): { overall: Light; open: PageId } {
+export function summary(lights: Partial<Record<PageId, Light>>): { overall: Light; open: PageId } {
   const overall = worst(...Object.values(lights));
   const open = PAGES.find((p) => lights[p.id] === overall)?.id ?? "releases";
   return { overall, open };
@@ -278,4 +279,6 @@ export function summary(lights: Record<PageId, Light>): { overall: Light; open: 
 /** No source runs from 4 November 2026 22:00 to 5 November 06:00 CET (21:00 to 05:00 UTC): launch night has the rate limits, the cookies and the checkouts to itself. */
 export const QUIET_FROM = Date.parse("2026-11-04T21:00:00Z");
 export const QUIET_TO = Date.parse("2026-11-05T05:00:00Z");
+/** Launch night ends for the tray and the readings 6 November 2026 06:00 UTC (the morning after, as the faster pace does): the Launch page stays, its lights no longer drive the icon. */
+export const LAUNCH_END = Date.parse("2026-11-06T06:00:00Z");
 export const quiet = (now: number): boolean => now >= QUIET_FROM && now < QUIET_TO;

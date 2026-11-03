@@ -59,12 +59,55 @@ environment.
   decision is due (a push wave, a release, a pull request, a store page, a
   zip). `server/demo.ts`: the real shapes in `testdata/` with things gone wrong.
 - `server/zips.ts`: the iCloud test folder, listed.
-- `web/page.css`, `web/page.js`: plain, no build, system fonts. The Launch tab
-  only shows the command to copy: `launch.ts` is started from Terminal.
 - `server/testdata/`: real output of the tools, saved 3 November 2026.
+
+## M2 (3 November 2026): the shell, the window in Ravenpost's look, launch night inside
+
+The user's calls after the first M2 build: launch night and Watchtower are one
+app (not a Terminal program the app points at), and the window is Ravenpost's
+(React, Vite, Tailwind, Cinzel and Inter, the same tokens and panels), not a
+plain page. `docs/probe.md` has the probe that decided notifications and PATH.
+
+- Go (`main.go`, `desktop.go`, `server.go`, `proxy.go`, `icon.go`,
+  `dock_darwin.go`): a Wails v3 window (traffic lights over the sidebar, hide
+  on close, the Dock icon only while it is open), a menu-bar icon whose colour
+  is the worst light (read from `/api/state` every 30 s), one instance (a second
+  launch shows the first's window). The Bun server is a child: a port the shell
+  picks, a key it makes, both by environment, `WATCHTOWER_SHELL=1`, stdin a pipe
+  the shell holds (EOF ends the server), the login shell's PATH (`zsh -lic`,
+  with a fallback list), restarted with a growing pause if it dies, its output
+  in `~/Library/Logs/Watchtower/server.log`. The family folder is
+  `WOW_ADDONS_ROOT`, else the one the build was made from, else
+  `~/code/wow-addons`.
+- `proxy.go`: the window's asset handler. Pages from the embedded
+  `frontend/dist`, `/api/*` to the server with the key added (Host set, Origin
+  dropped), `/shell/open` (https links only, to the browser) and `/shell/info`
+  from the shell itself. No page ever holds the key, and the server serves no
+  page at all.
+- `frontend/`: the window. `src/pages/` Launch, Releases, Data, Stores, Zips;
+  `src/lib/api.tsx` polls `/api/state` every 10 s. `bun run dev` in
+  `frontend/` shows it in a browser with `bun server/control.ts --demo`
+  (`WATCHTOWER_KEY=dev`, the Vite proxy adds the key as the shell does).
+- `server/launch/`: launch night inside. `rules.ts` is `addon-kit/launch-rules.ts`
+  copied verbatim (first line says so), `night.json` the checklist (the
+  addon-kit file is read instead while it is beside), `night.ts` the
+  readings only launch night needs (the site and inbox, forever.db coverage,
+  the screenshots in iCloud Drive) and `launchView`, built on the family's own
+  cells (preflight, status, board, and `latest.ts --json` for the Forever
+  build), so there is one gather. Ticks and notes live in
+  `addon-kit/.cache/launch-night.json`, the file `launch.ts` keeps, so either
+  shows the same night. `night.test.ts` holds the copy to the original while
+  addon-kit is beside. Routes: `/api/change`, `/api/shot`, `/api/notes`.
+- Launch night's window (4 November 22:00 to 5 November 06:00 CET): what launch
+  night reads (preflight, status, board, latest and its own three) still
+  runs, faster from the evening before (board 1 min, status 2); the data pull
+  requests, the store dry run timer and the zips wait, and an action from a
+  button still works.
+- `scripts/build.sh`: the app into `~/Applications/Watchtower.app` (ad hoc
+  signed, the old one to the Trash). No notifications yet (M3, by osascript).
 
 ## Not yet
 
-The Wails shell (M2), notifications (M3), launch night as a mode (M4, never
-before 5 November 2026 has happened). `launch.ts` and its files are untouched
-until then.
+Notifications, quiet hours, mutes and launch at login (M3). Deleting
+`launch.ts` and its files (after 5 November has happened and the user says
+so: `launch.ts` stays the fallback on the night itself).

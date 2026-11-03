@@ -5,14 +5,15 @@ import { quiet } from "./rules";
 import { family, SOURCES, type Source } from "./sources";
 
 export type Cell = { at: number; ms: number; data?: unknown; error?: string; paused?: boolean };
-export type Def = { every: number; get: () => Promise<unknown> };
+/** `every` may depend on the hour (launch night is read faster). `always`: read even in launch night's window, as launch night is Watchtower's own page now (the others, which take cookies and more rate limit, wait). */
+export type Def = { every: number | (() => number); get: () => Promise<unknown>; always?: boolean };
 export type Exec = (argv: string[], ms: number) => Promise<{ out: string; code: number; timedOut: boolean }>;
 
 /** Runs an argv from the family folder, killing it after `ms`. */
 export const exec: Exec = async (argv, ms) => {
   const root = family();
   if (!root) throw new Error("no family folder beside this repository");
-  const p = Bun.spawn(argv, { cwd: root, stdout: "pipe", stderr: "pipe", env: { ...process.env, NO_COLOR: "1" } });
+  const p = Bun.spawn(argv, { cwd: root, stdout: "pipe", stderr: "pipe", env: { ...Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith("WATCHTOWER_"))), NO_COLOR: "1" } });
   let timedOut = false;
   const timer = setTimeout(() => {
     timedOut = true;
@@ -35,12 +36,20 @@ export async function readJson(run: Exec, s: Source): Promise<unknown> {
   }
 }
 
-export const toolDefs = (run: Exec = exec): Record<string, Def> => Object.fromEntries(SOURCES.map((s) => [s.id, { every: s.everyMin * 60_000, get: () => readJson(run, s) }]));
+/** What launch night reads, and so what runs in its window. */
+export const LAUNCH_READS = new Set(["preflight", "status", "board", "latest"]);
+/** From the evening before launch to the morning after, the readings launch night leans on come faster (launch.ts's own pace). */
+const FAST = { board: 1, status: 2 } as Record<string, number>;
+const fast = (now: number) => now >= Date.parse("2026-11-04T12:00:00Z") && now < Date.parse("2026-11-06T06:00:00Z");
+
+export const toolDefs = (run: Exec = exec, clock: () => number = Date.now): Record<string, Def> =>
+  Object.fromEntries(SOURCES.map((s) => [s.id, { every: () => (FAST[s.id] && fast(clock()) ? FAST[s.id] : s.everyMin) * 60_000, always: LAUNCH_READS.has(s.id), get: () => readJson(run, s) }]));
 
 export class Engine {
   cells: Record<string, Cell> = {};
   private inflight = new Map<string, Promise<void>>();
-  private timers: ReturnType<typeof setInterval>[] = [];
+  private timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private stopped = false;
   constructor(
     private defs: Record<string, Def>,
     private clock: () => number = Date.now,
@@ -53,7 +62,7 @@ export class Engine {
     const def = Object.hasOwn(this.defs, name) ? this.defs[name] : undefined;
     if (!def) return Promise.reject(new Error(`no source ${name}`));
     // (launch night's window: nothing runs, the last answers stay)
-    if (quiet(this.clock())) {
+    if (!def.always && quiet(this.clock())) {
       this.cells[name] = { ...this.cells[name], at: this.cells[name]?.at ?? this.clock(), ms: this.cells[name]?.ms ?? 0, paused: true };
       return Promise.resolve();
     }
@@ -74,13 +83,20 @@ export class Engine {
   }
 
   start() {
+    this.stopped = false;
     for (const [name, def] of Object.entries(this.defs)) {
-      void this.refresh(name);
-      this.timers.push(setInterval(() => void this.refresh(name), def.every));
+      const loop = () => {
+        if (this.stopped) return;
+        void this.refresh(name);
+        this.timers.set(name, setTimeout(loop, typeof def.every === "function" ? def.every() : def.every));
+      };
+      loop();
     }
   }
   stop() {
-    for (const t of this.timers) clearInterval(t);
+    this.stopped = true;
+    for (const t of this.timers.values()) clearTimeout(t);
+    this.timers.clear();
   }
   busy = () => [...this.inflight.keys()];
 }

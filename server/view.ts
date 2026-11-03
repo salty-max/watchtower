@@ -1,10 +1,14 @@
 // The view the pages draw: the cells' answers run through the rules, one block
 // per page, and the summary (the tray's colour, the page the window opens on).
 import type { Cell } from "./engine";
+import { launchView, type Content } from "./launch/night";
+import type { State } from "./launch/rules";
 import * as rules from "./rules";
+import { LAUNCH_END } from "./rules";
 import type { Light, PageId, Verdict } from "./rules";
 
 const SOURCES_OF: Record<PageId, string[]> = {
+  launch: [],
   releases: ["preflight", "status", "board"],
   data: ["data-prs", "latest"],
   stores: ["stores"],
@@ -32,7 +36,8 @@ const seal = (page: PageId, cells: Record<string, Cell>, v: Verdict): Verdict =>
   return { light: rules.worst(v.light, s.light), reasons: [...v.reasons, ...s.reasons] };
 };
 
-export function view(cells: Record<string, Cell>, busy: string[], now = Date.now()) {
+/** `night`: launch night's checklist and its saved ticks and notes, which the Launch page needs. Without it there is no Launch page (the tests of the other pages). */
+export function view(cells: Record<string, Cell>, busy: string[], now = Date.now(), night?: { content: Content; state: State }) {
   const preflight = data<rules.Preflight[]>(cells, "preflight");
   const status = data<rules.Repo[]>(cells, "status");
   const board = data<rules.Card[]>(cells, "board") ?? [];
@@ -65,12 +70,20 @@ export function view(cells: Record<string, Cell>, busy: string[], now = Date.now
   const folderNote = cells.zips?.error ? `the folder could not be listed: ${cells.zips.error}` : undefined;
   const zipsBlock = { verdict: seal("zips", cells, zipsV), zips: zipLines, folderNote };
 
-  const lights = { releases: releases.verdict.light, data: dataBlock.verdict.light, stores: storesBlock.verdict.light, zips: zipsBlock.verdict.light } as Record<PageId, Light>;
+  const launch = night ? launchView(night.content, cells, night.state, busy, now) : undefined;
+  const lights: Partial<Record<PageId, Light>> = { releases: releases.verdict.light, data: dataBlock.verdict.light, stores: storesBlock.verdict.light, zips: zipsBlock.verdict.light };
+  // (launch night's lights drive the tray only through its own night and the morning after: an open data pull request would turn it red for good once its check time has passed)
+  const forTray: Partial<Record<PageId, Light>> = { ...lights };
+  if (launch) {
+    lights.launch = launch.overall;
+    if (now < LAUNCH_END) forTray.launch = launch.overall;
+  }
   return {
     now,
     quiet: rules.quiet(now),
-    ...rules.summary(lights),
-    pages: rules.PAGES.map((p) => ({ ...p, light: lights[p.id] })),
+    ...rules.summary(forTray),
+    pages: rules.PAGES.filter((p) => lights[p.id]).map((p) => ({ ...p, light: lights[p.id] as Light })),
+    launch,
     releases,
     data: dataBlock,
     stores: storesBlock,
