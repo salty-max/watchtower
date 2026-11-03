@@ -12,6 +12,7 @@ export function Sidebar({ page, go }: { page: string; go: (id: string) => void }
   if (!state) return null;
   const oldest = Math.min(...Object.values(state.ages).map((a) => a.at));
   const stale = now - lastOk > 60_000;
+  const cached = Object.values(state.ages).filter((a) => a.cached && !a.error && !a.paused);
   return (
     <aside className="drag flex w-56 shrink-0 flex-col border-r border-edge bg-stone/80 pt-12">
       <div className="flex items-center gap-3 px-5 pb-6">
@@ -42,7 +43,7 @@ export function Sidebar({ page, go }: { page: string; go: (id: string) => void }
       <div className="mt-auto px-5 pb-5">
         <p className="flex items-center gap-2 text-[13px]">
           <span aria-hidden className={`size-2 shrink-0 rounded-full ${stale ? "bg-blood" : state.busy.length ? "pulse-dot bg-gold" : "pulse-dot bg-ok"}`} />
-          <span className={stale ? "text-blood" : "text-dim"}>{stale ? "Lost the server" : state.busy.length ? `Reading ${state.busy[0]}…` : `Read ${ago(oldest, now)}`}</span>
+          <span className={stale ? "text-blood" : "text-dim"}>{stale ? "Lost the server" : cached.length ? `Cached ${ago(Math.min(...cached.map((a) => a.at)), now)}, reading again…` : state.busy.length ? `Reading ${state.busy[0]}…` : `Read ${ago(oldest, now)}`}</span>
         </p>
         <p className="mt-2 text-xs leading-snug text-faint">{shell ? "Closing the window keeps Watchtower in the menu bar. Quit is in its menu." : "In a browser: the app itself is in the menu bar."}</p>
       </div>

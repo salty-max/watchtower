@@ -24,6 +24,7 @@ import { basename, join } from "node:path";
 import { demoData } from "./demo";
 import { demoLaunchCells, launchDefs, loadContent, notesMarkdown, stateFile, ICLOUD_DRIVE, type Content } from "./launch/night";
 import * as night from "./launch/rules";
+import { DiskCache } from "./cache";
 import { Engine, exec as realExec, toolDefs, type Cell, type Def, type Exec } from "./engine";
 import { action, safe } from "./actions";
 import { view } from "./view";
@@ -108,9 +109,12 @@ if (import.meta.main) {
   const constant = (data: unknown): Def => ({ every: 1e12, always: true, get: async () => data });
   const defs: Record<string, Def> = demo
     ? { ...Object.fromEntries(Object.entries(demoData(now)).map(([id, data]) => [id, constant(data)])), ...Object.fromEntries(Object.entries(demoLaunchCells(content, now)).map(([id, c]) => [id, constant(c.data)])) }
-    : { ...toolDefs(), ...launchDefs(content), zips: { every: 5 * 60_000, get: async () => listZips() } };
+    : { ...toolDefs(), ...launchDefs(content), zips: { every: 5 * 60_000, key: "folder", shape: "array", get: async () => listZips() } };
   // (the demo ignores launch night's window: it runs nothing)
-  const engine = new Engine(defs, demo ? () => 0 : Date.now);
+  // (the last good readings from disk draw the pages at once: only the server proper, not the demo or --once)
+  const cache = demo || args.includes("--once") ? undefined : new DiskCache();
+  cache?.sweep();
+  const engine = new Engine(defs, demo ? () => 0 : Date.now, cache);
   const deps: Deps = {
     engine,
     exec: demo ? async (argv) => ({ out: `(demo) would run: ${argv.join(" ")}`, code: 0, timedOut: false }) : realExec,

@@ -231,7 +231,7 @@ function Timeline({ L }: { L: Dict }) {
 function Systems({ L, toast }: { L: Dict; toast: (t: string, tone?: "ok" | "error") => void }) {
   const { state, reload } = useApp();
   const ages = state!.ages;
-  const age = (k: string) => (ages[k] ? (ages[k].error ? "failed" : ago(ages[k].at)) : "not read yet");
+  const age = (k: string) => (ages[k] ? (ages[k].error ? "failed" : `${ago(ages[k].at)}${ages[k].cached ? " (cached)" : ""}`) : "not read yet");
   const rows: [string, Dict, string[]?][] = [
     ["Forever build", L.build],
     ["Data chain", L.chain],
@@ -398,7 +398,7 @@ function ForeverData({ L }: { L: Dict }) {
   const d = L.data;
   const k = d.kinds ?? {};
   return (
-    <Box title="Forever data" age={state!.ages["launch-data"] ? ago(state!.ages["launch-data"].at) : "not read yet"}>
+    <Box title="Forever data" age={state!.ages["launch-data"] ? `${ago(state!.ages["launch-data"].at)}${state!.ages["launch-data"].cached ? " (cached)" : ""}` : "not read yet"}>
       {d.error && !d.zones ? (
         <p className="text-[13px] text-faint select-text">{d.error}</p>
       ) : (

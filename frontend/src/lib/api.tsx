@@ -16,7 +16,8 @@ export type State = {
   zips: Dict;
   launch?: Dict;
   cards: { id: string; title: string; status: string; repos?: string[] }[];
-  ages: Record<string, { at: number; ms: number; error?: string; paused?: boolean }>;
+  /** `cached`: loaded from disk, no live reading yet. `stale`: and older than its interval. */
+  ages: Record<string, { at: number; ms: number; error?: string; paused?: boolean; cached?: boolean; stale?: boolean }>;
   busy: string[];
 };
 export type Toast = { id: number; tone: "ok" | "error"; text: string };

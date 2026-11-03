@@ -112,3 +112,23 @@ plain page. `docs/probe.md` has the probe that decided notifications and PATH.
 ## Not yet
 
 Notifications, quiet hours, mutes and launch at login (M3).
+
+## The reading cache (3 November 2026)
+
+`server/cache.ts`: every source's last good reading is kept in
+`~/.cache/watchtower/readings/<source>.json` (`WATCHTOWER_CACHE` moves it) with
+its time, and loaded by the engine at start, so the pages draw at once while the
+sources read again (preflight alone takes about 80 s cold, the rest 0 to 15 s,
+all started together). A file is trusted only when its `version`
+(`CACHE_VERSION`, bumped when a source's JSON or the Cell changes shape), its
+source id, its key (the argv, so a changed command drops it) and its kind
+(array or object) all match: otherwise it is dropped and the source reads cold.
+Only a successful reading is written, atomically, so a failure or a timeout
+never replaces a good file. The serve mode only: `--demo` and `--once` read and
+write nothing.
+
+A loaded cell has `cached: true` until a live reading replaces it. One older than
+its interval (`staleCache`) is amber on the pages it feeds and on the Launch
+page's Sources, with the reason, exactly as a failed reading is, so old data is
+never a fresh green. A cached one inside its interval keeps its verdict, with
+"(cached)" by its age and "Cached 5 min ago, reading again" in the sidebar.

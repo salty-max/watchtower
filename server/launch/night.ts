@@ -8,7 +8,7 @@ import { Database } from "bun:sqlite";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import type { Cell, Def } from "../engine";
+import { staleCache, type Cell, type Def } from "../engine";
 import { LAUNCH_END } from "../rules";
 import { family } from "../sources";
 import * as rules from "./rules";
@@ -99,8 +99,8 @@ const MIN = 60_000;
 const after = (ms: number) => () => (Date.now() < LAUNCH_END ? ms : 60 * MIN);
 /** The sources launch night adds to the family's: their ids are prefixed, so no page's cell is overwritten. */
 export const launchDefs = (content: Content): Record<string, Def> => ({
-  "launch-infra": { every: after(5 * MIN), always: true, get: () => Promise.all(PROBES.map(probe)) },
-  "launch-data": { every: after(15 * MIN), always: true, get: async () => coverage() },
+  "launch-infra": { every: after(5 * MIN), always: true, key: "probes", shape: "array", get: () => Promise.all(PROBES.map(probe)) },
+  "launch-data": { every: after(15 * MIN), always: true, key: "coverage", shape: "object", get: async () => coverage() },
   "launch-shots": { every: after(20_000), always: true, get: async () => screenshots(Date.parse(content.launch) - 3600_000) },
 });
 
@@ -158,7 +158,9 @@ export function launchView(content: Content, cells: Record<string, Cell>, state:
   // (a source that failed keeps its last answer: a green on old data is not a green, so a failure after an answer is amber. One that never answered is already grey where it feeds a light. The screenshots are left out: a missing iCloud permission must not stop a launch)
   const mine = ["preflight", "status", "board", "latest", "launch-infra", "launch-data"];
   const failing = mine.filter((k) => cells[k]?.error && cells[k].data !== undefined);
-  const sourcesV: rules.Verdict = { light: failing.length ? "amber" : "green", reasons: failing.map((k) => `${k} failed: ${cells[k].error}`) };
+  // (a cached reading older than its interval is no more green than a failed one)
+  const cached = mine.filter((k) => !failing.includes(k) && staleCache(cells[k], now));
+  const sourcesV: rules.Verdict = { light: failing.length || cached.length ? "amber" : "green", reasons: [...failing.map((k) => `${k} failed: ${cells[k].error}`), ...cached.map((k) => `${k}: a cached reading older than its interval, reading again`)] };
 
   const overall = rules.worst(buildV.light, chain.light, infra.light, boardV.light, sourcesV.light, ...addons.map((a) => a.light));
 

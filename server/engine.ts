@@ -1,12 +1,19 @@
 // Running the family's tools and keeping their answers: one cell per source,
 // filled on timers, one flight at a time, an old answer kept when the new one
 // fails (marked with the error, so the page can call it stale).
+import type { Shape, Store } from "./cache";
 import { quiet } from "./rules";
 import { family, SOURCES, type Source } from "./sources";
 
-export type Cell = { at: number; ms: number; data?: unknown; error?: string; paused?: boolean };
+/** `cached`: the answer was loaded from disk at start and no live reading has replaced it yet. `everyMs`: how often it is asked, to say when a cached answer is older than its interval. */
+export type Cell = { at: number; ms: number; data?: unknown; error?: string; paused?: boolean; cached?: boolean; everyMs?: number };
+
+/** A cached answer older than its interval: the page that leans on it is amber, never green, until a live reading lands. */
+/** (a paused cell in launch night's window is explained by the quiet banner, and nothing reads again until it ends) */
+export const staleCache = (c: Cell | undefined, now: number) => !!c?.cached && !c.paused && c.data !== undefined && now - c.at > (c.everyMs ?? 0);
 /** `every` may depend on the hour (launch night is read faster). `always`: read even in launch night's window, as launch night is Watchtower's own page now (the others, which take cookies and more rate limit, wait). */
-export type Def = { every: number | (() => number); get: () => Promise<unknown>; always?: boolean };
+/** `key`: what the disk cache checks before trusting a file (the argv, for a tool), `shape`: the JSON's kind. Without a `key` nothing is kept on disk. */
+export type Def = { every: number | (() => number); get: () => Promise<unknown>; always?: boolean; key?: string; shape?: Shape };
 export type Exec = (argv: string[], ms: number) => Promise<{ out: string; code: number; timedOut: boolean }>;
 
 /** Runs an argv from the family folder, killing it after `ms`. */
@@ -42,8 +49,10 @@ export const LAUNCH_READS = new Set(["preflight", "status", "board", "latest"]);
 const FAST = { board: 1, status: 2 } as Record<string, number>;
 const fast = (now: number) => now >= Date.parse("2026-11-04T12:00:00Z") && now < Date.parse("2026-11-06T06:00:00Z");
 
+const SHAPES: Record<string, Shape> = { preflight: "array", status: "array", board: "array", "data-prs": "object", stores: "array", latest: "object" };
+
 export const toolDefs = (run: Exec = exec, clock: () => number = Date.now): Record<string, Def> =>
-  Object.fromEntries(SOURCES.map((s) => [s.id, { every: () => (FAST[s.id] && fast(clock()) ? FAST[s.id] : s.everyMin) * 60_000, always: LAUNCH_READS.has(s.id), get: () => readJson(run, s) }]));
+  Object.fromEntries(SOURCES.map((s) => [s.id, { every: () => (FAST[s.id] && fast(clock()) ? FAST[s.id] : s.everyMin) * 60_000, always: LAUNCH_READS.has(s.id), key: s.argv.join(" "), shape: SHAPES[s.id], get: () => readJson(run, s) }]));
 
 export class Engine {
   cells: Record<string, Cell> = {};
@@ -53,7 +62,16 @@ export class Engine {
   constructor(
     private defs: Record<string, Def>,
     private clock: () => number = Date.now,
-  ) {}
+    private store?: Store,
+  ) {
+    if (store) {
+      const keyed = Object.entries(defs).filter(([, d]) => d.key !== undefined);
+      const saved = store.load(Object.fromEntries(keyed.map(([id, d]) => [id, { key: d.key as string, shape: d.shape }])));
+      for (const [id, c] of Object.entries(saved)) this.cells[id] = { ...c, cached: true, everyMs: this.everyOf(defs[id]) };
+    }
+  }
+
+  private everyOf = (d: Def) => (typeof d.every === "function" ? d.every() : d.every);
 
   has = (name: string) => Object.hasOwn(this.defs, name);
   sources = () => Object.keys(this.defs);
@@ -73,6 +91,8 @@ export class Engine {
       .get()
       .then((data) => {
         this.cells[name] = { at: Date.now(), ms: Date.now() - t, data };
+        // (only a good reading is written: an error never replaces one)
+        if (def.key !== undefined) this.store?.save(name, def.key, this.cells[name] as { at: number; ms: number; data: unknown });
       })
       .catch((e) => {
         this.cells[name] = { ...this.cells[name], at: this.cells[name]?.at ?? Date.now(), ms: Date.now() - t, error: e instanceof Error ? e.message : String(e) };
