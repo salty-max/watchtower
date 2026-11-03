@@ -1,0 +1,6 @@
+# the bundle and the Go build (M2)
+/dist/
+/watchtower
+# logs and caches of a run
+.cache/
+node_modules/
