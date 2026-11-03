@@ -19,6 +19,7 @@ its section 9).
 | Launch night inside the app | `server/launch/` |
 | Run the server (`--demo` first) | `bun watchtower/server/control.ts [--demo]` from the family folder |
 | The lights' rules, the allow-list | `server/rules.ts`, `server/actions.ts` (tests beside them) |
+| Fix sessions from a red light (preview, one press, gates) | `server/fix.ts`, `../ideas/watchtower-fix-sessions.md` |
 | The tools it reads (argv lists, `--json`, the words that may never appear) | `server/sources.ts`, `server/sources.test.ts` |
 | The tools' JSON (additive, their Markdown unchanged) | `../addon-kit/data-prs.ts`, `store.ts`, `preflight.ts`, `status.ts`, `board.ts` and `../wow-data/bin/latest.ts` |
 
@@ -35,10 +36,22 @@ clone): q stamps only the repository's own check.
 
 ## Hard rules
 
-- **Read, plus harmless actions.** Nothing here pushes, releases, applies a
-  store page, merges a pull request, runs a workflow, sets a secret or starts
-  a session. The server will run an allow-list of argv templates, never a shell
-  line. Today `server/sources.test.ts` holds the sources table to that.
+- **Read, plus harmless actions, plus one gated thing that is not harmless.**
+  Nothing here pushes, releases, applies a store page, merges a pull request,
+  runs a workflow or sets a secret. The server runs an allow-list of argv
+  templates (`server/actions.ts`), never a shell line, and `session` stays a
+  forbidden word there (`server/sources.test.ts`). The one exception is a
+  **fix session** (`server/fix.ts`, the plan `../ideas/watchtower-fix-sessions.md`):
+  from a red light, after a preview of the exact prompt and a second press, it
+  runs the family's `addon-kit/session.ts` as an argv list, and that session
+  can edit files, run commands and commit. That is not harmless, so it is
+  bounded: one per light, a cool-down, at most three, repositories free,
+  a live dispatcher session named to receive its report and push the
+  reported range, launch night's window refused or narrowed. Log text is
+  untrusted and goes only inside one nonce-fenced block of the prompt, never
+  to a shell, a path or an argv word of its own. `fix.ts` is the only module
+  that may name `session.ts` (a test greps for it), and Watchtower itself never
+  pushes.
 - **Launch night is a page of the app** (the user's call, 3 November 2026,
   made final that evening): `addon-kit/launch.ts` and its files are gone, and
   Watchtower is the only launch page. Its checklist is `server/launch/night.json`

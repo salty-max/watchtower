@@ -109,6 +109,25 @@ plain page. `docs/probe.md` has the probe that decided notifications and PATH.
 - `scripts/build.sh`: the app into `/Applications/Watchtower.app` (first built into `~/Applications`, which Finder's sidebar does not show) (ad hoc
   signed, the old one to the Trash). No notifications yet (M3, by osascript).
 
+## Fix sessions (3 November 2026)
+
+`server/fix.ts`, the one module that starts a Claude session (plan:
+`ideas/watchtower-fix-sessions.md`). It reads the cells and offers a fix for
+the red lights that are faults a session can fix: a failing CI run, a ✗ in
+preflight, a failed daily job, a Pins or Game data pull request whose checks
+failed, a tool's error. A preview builds the exact prompt (our header, the
+facts it checked, the family's rules, then every word a tool said in one
+nonce-fenced block), the repositories, the model and the dispatcher that
+receives the report. The second press, with the preview's one-time token,
+runs `bun addon-kit/session.ts <title> --repos … --kind … --opener <session id>
+-- <task>` as an argv list. Gates: one per light (a cool-down of 30 minutes
+from the session's end), at most three, repositories not held by a card or
+another fix (starts are served one at a time), a fresh board, a live
+dispatcher, launch night's window (Data paused, Releases lights of the
+launch checklist only, one at a time). State: `~/.cache/watchtower/fixes.json`
+and `fix-settings.json` (`WATCHTOWER_STATE_DIR` moves them). The routes and the
+window come with F2 and F3.
+
 ## Not yet
 
 Notifications, quiet hours, mutes and launch at login (M3).
