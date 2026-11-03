@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	_ "embed"
 	"image"
 	"image/color"
 	"image/png"
@@ -64,33 +65,14 @@ func trayIcon(light string) []byte {
 	return encode(img)
 }
 
-// appIcon is the app's icon: the tower on a dark rounded square with a lit
-// lantern, n px.
-func appIcon(n int) []byte {
-	img := image.NewNRGBA(image.Rect(0, 0, n, n))
-	bg := color.NRGBA{0x14, 0x16, 0x1c, 0xff}
-	stone := color.NRGBA{0xc9, 0xc2, 0xb0, 0xff}
-	lamp := lightColour("amber")
-	for y := 0; y < n; y++ {
-		for x := 0; x < n; x++ {
-			fx, fy := (float64(x)+0.5)/float64(n), (float64(y)+0.5)/float64(n)
-			// (a rounded square, macOS' icon grid leaves a margin of about 10%)
-			qx, qy := math.Abs(fx-0.5)-0.34, math.Abs(fy-0.5)-0.34
-			if math.Hypot(math.Max(qx, 0), math.Max(qy, 0)) > 0.12 {
-				continue
-			}
-			c := bg
-			if tower(fx, fy) {
-				c = stone
-				if fy >= 0.23 && fy < 0.31 && fx >= 0.36 && fx <= 0.64 {
-					c = lamp
-				}
-			}
-			img.SetNRGBA(x, y, c)
-		}
-	}
-	return encode(img)
-}
+// appIconPNG is the app's icon: the painted logo on macOS' icon grid, 512 px
+// (scripts/icon.sh makes it from assets/logo-1024.png, and build.sh makes the .icns from the 1024 px one).
+//
+//go:embed assets/app-icon-512.png
+var appIconPNG []byte
+
+// appIcon is what the window's application icon (the Dock's) is.
+func appIcon() []byte { return appIconPNG }
 
 func encode(img image.Image) []byte {
 	var buf bytes.Buffer

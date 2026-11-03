@@ -22,16 +22,10 @@ var defaultRoot = ""
 
 func main() {
 	showVersion := flag.Bool("version", false, "print the version")
-	drawIcon := flag.String("draw-icon", "", "write the app's icon (512 px PNG) to this path and exit")
 	flag.Parse()
 	switch {
 	case *showVersion:
 		fmt.Println(version)
-		return
-	case *drawIcon != "":
-		if err := os.WriteFile(*drawIcon, appIcon(512), 0o644); err != nil {
-			log.Fatal(err)
-		}
 		return
 	}
 	setupLog()

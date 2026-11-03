@@ -105,7 +105,7 @@ func runDesktop() error {
 	app := application.New(application.Options{
 		Name:        "Watchtower",
 		Description: "The addon family's control centre",
-		Icon:        appIcon(512),
+		Icon:        appIcon(),
 		Assets:      application.AssetOptions{Handler: serve},
 		Mac:         application.MacOptions{ActivationPolicy: application.ActivationPolicyAccessory},
 		SingleInstance: &application.SingleInstanceOptions{

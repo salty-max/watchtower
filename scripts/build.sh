@@ -22,12 +22,12 @@ CGO_ENABLED=1 CGO_CFLAGS="-mmacosx-version-min=11.0" CGO_LDFLAGS="-mmacosx-versi
 APP=dist/Watchtower.app
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp dist/tmp/watchtower "$APP/Contents/MacOS/watchtower"
-dist/tmp/watchtower --draw-icon dist/tmp/icon-512.png
 ICONSET=dist/tmp/AppIcon.iconset && mkdir -p "$ICONSET"
+# the painted logo on macOS' icon grid (scripts/icon.sh makes assets/app-icon.png), every size from the 1024
 for size in 16 32 128 256 512; do
-  sips -z $size $size dist/tmp/icon-512.png --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
-  double=$((size * 2)); [ $double -le 512 ] &&
-    sips -z $double $double dist/tmp/icon-512.png --out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
+  sips -z $size $size assets/app-icon.png --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
+  double=$((size * 2))
+  sips -z $double $double assets/app-icon.png --out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
 done
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 cat > "$APP/Contents/Info.plist" <<PLIST
