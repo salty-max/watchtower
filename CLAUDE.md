@@ -15,7 +15,7 @@ its section 9).
 | The plan, the milestones (M0 groundwork, M1 server and pages, M2 shell, M3 notifications, M4 launch night as a mode) | `../ideas/control-centre.md` |
 | What exists, file by file | `docs/architecture.md` |
 | The tools it reads (argv lists, `--json`, the words that may never appear) | `server/sources.ts`, `server/sources.test.ts` |
-| The tools' JSON (additive, their Markdown unchanged) | `../addon-kit/data-prs.ts`, `store.ts`, `preflight.ts`, `status.ts`, `board.ts`; `../wow-data/bin/latest.ts` |
+| The tools' JSON (additive, their Markdown unchanged) | `../addon-kit/data-prs.ts`, `store.ts`, `preflight.ts`, `status.ts`, `board.ts` and `../wow-data/bin/latest.ts` |
 
 ## Commands
 

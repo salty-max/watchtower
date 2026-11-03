@@ -17,6 +17,17 @@ describe("the sources", () => {
       expect(s.argv).toContain("--json");
     }
   });
+  // (what the control centre may run is this list and nothing else: a new argv is a new line here, read as one)
+  test("the argv of every source, exactly", () => {
+    expect(Object.fromEntries(SOURCES.map((s) => [s.id, s.argv.slice(1).join(" ")]))).toEqual({
+      preflight: "addon-kit/preflight.ts --json",
+      status: "addon-kit/status.ts --json",
+      board: "addon-kit/board.ts list --json",
+      "data-prs": "addon-kit/data-prs.ts --json",
+      stores: "addon-kit/store.ts --all --json",
+      latest: "wow-data/bin/latest.ts --json",
+    });
+  });
   test("ids are unique and every source is asked at a sane pace", () => {
     expect(new Set(SOURCES.map((s) => s.id)).size).toBe(SOURCES.length);
     for (const s of SOURCES) {

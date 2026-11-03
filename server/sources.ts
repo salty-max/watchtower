@@ -16,7 +16,7 @@ export function family(): string | undefined {
 export type Source = {
   id: string;
   label: string;
-  /** Run from FAMILY. */
+  /** Run from the family folder (`family()`). */
   argv: string[];
   /** How often it is asked while nobody looks, and how long it may take, in minutes and seconds. */
   everyMin: number;

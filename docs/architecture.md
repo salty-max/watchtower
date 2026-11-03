@@ -11,7 +11,7 @@ The plan and its reasons: `ideas/control-centre.md` in the family folder
   secret, session, api, and `--write` and `--next` (latest.ts's modes that
   move the pins). `forbidden(argv)` is the one check, and `sources.test.ts`
   holds the table to it.
-- `scripts/root.ts`: the kit's copy, finding the family folder. `family()` is
+- `scripts/root.ts`: the kit's copy (made by hand, not by kit:sync), finding the family folder. `family()` is
   undefined in a CI checkout of this repository alone, where the test that the
   tools exist is skipped.
 - The tools' JSON, all additive, the Markdown each printed before unchanged:
