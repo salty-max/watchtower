@@ -36,9 +36,14 @@ clone): q stamps only the repository's own check.
 
 ## Hard rules
 
-- **Read, plus harmless actions, plus one gated thing that is not harmless.**
+- **Read, plus harmless actions, plus a plain pull, plus one gated thing that is not harmless.**
   Nothing here pushes, releases, applies a store page, merges a pull request,
-  runs a workflow or sets a secret. The server runs an allow-list of argv
+  runs a workflow or sets a secret. The one thing besides the fix session that
+  changes a repository is the **pull button** (`git -C <repository> pull
+  --ff-only`, `server/actions.ts` `pullRefusal` and the route in `control.ts`):
+  only for a repository `status` read and not one a running card holds, refused in
+  words when it has an uncommitted file or a commit not pushed (it moves a clean
+  branch forward and nothing else), the output shown. The server runs an allow-list of argv
   templates (`server/actions.ts`), never a shell line, and `session` stays a
   forbidden word there (`server/sources.test.ts`). The one exception is a
   **fix session** (`server/fix.ts`, the plan `../ideas/watchtower-fix-sessions.md`):

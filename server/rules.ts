@@ -72,6 +72,8 @@ export function release(p: Preflight): Release {
 export type RepoLine = {
   name: string;
   head: string;
+  /** The branch the checkout is on (a pull is only for main). */
+  branch?: string;
   ahead: number;
   behind: number;
   dirty: number;
@@ -115,6 +117,7 @@ export function repoLine(r: Repo, cards: Card[]): RepoLine {
   return {
     name: r.name,
     head: r.head,
+    branch: r.branch,
     ahead: r.ahead,
     behind: r.behind,
     dirty: r.dirty,

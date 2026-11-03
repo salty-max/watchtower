@@ -9,7 +9,7 @@ const demo = view(demoCells(NOW), [], NOW) as never;
 const ok = { light: "green", reasons: [] };
 const base = (over: Record<string, unknown>) => ({ releases: { addons: [], repos: [], verdict: ok }, data: { jobs: [], prs: [], builds: ok, errors: [], verdict: ok }, stores: { stores: [], verdict: ok }, zips: { zips: [], verdict: ok }, ...over }) as never;
 const addon = (name: string, rows: Record<string, unknown>[], extra: Record<string, unknown> = {}) => ({ name, rows, verdict: { light: rows.some((r) => r.mark === "✗") ? "red" : "amber", reasons: [] }, ...extra });
-const repo = (name: string, over: Record<string, unknown> = {}) => ({ name, ahead: 0, behind: 0, dirty: 0, verdict: ok, ...over });
+const repo = (name: string, over: Record<string, unknown> = {}) => ({ name, branch: "main", ahead: 0, behind: 0, dirty: 0, verdict: ok, ...over });
 
 describe("the list", () => {
   const items = queue(demo);
@@ -112,5 +112,37 @@ describe("one addon", () => {
     expect(mine).toHaveLength(1);
     expect(mine[0].what).toBe("has commits with no review yet.");
     expect(mine[0].addons).toBeUndefined();
+  });
+});
+
+describe("nothing to do before launch, and a plain pull", () => {
+  const launchState = (open: boolean) => ({ build: { reasons: [] }, infra: { reasons: [] }, sources: { reasons: [] }, open, addons: ["a", "b"].map((id) => ({ id, name: id.toUpperCase(), inGame: { light: "grey" }, checks: [] })) });
+  test("before launch an untested in-game check is not a thing to do, and after launch it is", () => {
+    expect(queue(base({ launch: launchState(false) }))).toHaveLength(0);
+    const after = queue(base({ launch: launchState(true) }));
+    expect(after).toHaveLength(2);
+    expect(after[0].what).toBe("has not been tested in the game yet.");
+  });
+  test("an addon that is only behind origin gets a pull and no fix; one that is also dirty or ahead keeps its fix", () => {
+    const fix = { key: "yonder/release/preflight", state: "offered" };
+    const git = [{ mark: "✗", label: "git", text: "1 to pull: release.sh wants main clean and in sync" }];
+    const pullable = base({ releases: { addons: [addon("yonder", git, { fix })], repos: [repo("yonder", { behind: 1, verdict: { light: "amber", reasons: ["1 behind origin"] } })], verdict: ok } });
+    const item = queue(pullable)[0];
+    expect(item.pull).toBe("yonder");
+    expect(item.fix).toBeUndefined();
+    expect(item.prompt).toBeUndefined();
+    const dirty = base({ releases: { addons: [addon("yonder", git, { fix })], repos: [repo("yonder", { behind: 1, dirty: 2, verdict: { light: "amber", reasons: ["1 behind origin"] } })], verdict: ok } });
+    expect(queue(dirty)[0].pull).toBeUndefined();
+    expect(queue(dirty)[0].fix).toEqual(fix);
+  });
+  test("a tool repository that is only behind gets a pull too", () => {
+    const s = base({ releases: { addons: [], repos: [repo("wow-data", { behind: 2, verdict: { light: "amber", reasons: ["2 behind origin"] } })], verdict: ok } });
+    expect(queue(s)[0].pull).toBe("wow-data");
+  });
+  test("a behind repository that is not on main keeps its fix and gets no pull", () => {
+    const fix = { key: "yonder/release/preflight", state: "offered" };
+    const s = base({ releases: { addons: [addon("yonder", [{ mark: "✗", label: "git", text: "x" }], { fix })], repos: [repo("yonder", { branch: "wip", behind: 1, verdict: { light: "amber", reasons: ["1 behind origin"] } })], verdict: ok } });
+    expect(queue(s)[0].pull).toBeUndefined();
+    expect(queue(s)[0].fix).toEqual(fix);
   });
 });

@@ -26,7 +26,8 @@ import { demoLaunchCells, launchDefs, launchRepoSet, loadContent, notesMarkdown,
 import * as night from "./launch/rules";
 import { DiskCache } from "./cache";
 import { Engine, exec as realExec, toolDefs, type Cell, type Def, type Exec } from "./engine";
-import { action, safe } from "./actions";
+import { action, pullArgv, pullRefusal, REPO_NAME, safe, statusArgv } from "./actions";
+import { forbidden } from "./sources";
 import { attach, Fixer, type Live } from "./fix";
 import { view } from "./view";
 import { listZips } from "./zips";
@@ -119,6 +120,23 @@ export function handler(deps: Deps, key: string, port: number) {
       return respond({ ok: true });
     }
 
+    // a pull: `git pull --ff-only` in one repository status read, only for a clean branch that is behind (never a merge, never over work in progress)
+    if (url.pathname === "/api/action" && body.name === "pull") {
+      const repo = String(body.repo ?? "");
+      const known = ((deps.engine.cells.status?.data as { name: string }[] | undefined) ?? []).some((r) => r.name === repo);
+      if (!REPO_NAME.test(repo) || !known || forbidden([repo])) return respond({ error: "which repository" }, 400);
+      // (a pull is a write: a repository a running card holds is left to its session, as fix.ts leaves it)
+      const holder = ((deps.engine.cells.board?.data as { title: string; status: string; repos?: string[] }[] | undefined) ?? []).find((c) => c.status === "running" && (c.repos ?? []).includes(repo));
+      if (holder) return respond({ ok: false, out: `${repo} is held by the card "${holder.title}", so nothing was pulled.` });
+      const st = await deps.exec(statusArgv(repo), 15_000);
+      if (st.code !== 0 || st.timedOut) return respond({ ok: false, out: `git could not read ${repo}: ${st.timedOut ? "it took too long" : st.out.slice(-500)}` });
+      const why = pullRefusal(st.out);
+      if (why) return respond({ ok: false, out: why });
+      const r = await deps.exec(pullArgv(repo), 120_000);
+      // (what the pull changed is read again, without waiting for it: preflight takes a minute)
+      for (const name of ["status", "preflight"]) if (deps.engine.has(name)) deps.engine.refresh(name).catch(() => undefined);
+      return respond({ ok: r.code === 0 && !r.timedOut, out: r.timedOut ? "Git took too long, so it was stopped." : r.out.slice(-6000) });
+    }
     if (url.pathname === "/api/action") {
       const a = action(body);
       if ("error" in a) return respond({ error: a.error }, 400);

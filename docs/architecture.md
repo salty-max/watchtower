@@ -190,3 +190,19 @@ Dock's). The menu-bar icon stays a status-coloured disc with a tower cut out
 (`icon.go`): the colour is the information, and the painted tower is mud at 16
 to 22 px. The window's mark and favicon are `frontend/public/icon.png`, the 64 px
 export.
+
+## Before launch, and the pull
+
+`launchView` carries `open` (launch time has come). Before it, an untested in-game
+check is neutral ("These start when Forever is out"): it lights nothing, is no item on
+the Overview and no count in its title, and only a check ticked broken is red. From
+launch time on, untested is a thing to do. Everything else that could only be true
+because launch has not happened was audited (3 November 2026): the Forever build
+line, the data chain, the store pages and the preflight rows can all be acted on now, so
+they stay.
+
+The pull button: a row whose only trouble is that its branch is behind origin gets
+**Pull** instead of a fix session. The route (`POST /api/action {name: "pull"}`) reads
+`git status --porcelain --branch` first and refuses, in words, a dirty tree, a commit not
+pushed, no upstream or no branch, and a repository a running card holds, and only then runs `git pull --ff-only` in that
+repository.

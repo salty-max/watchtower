@@ -122,6 +122,7 @@ export function foreverBuild(l: Latest | undefined): rules.Build | undefined {
 }
 
 export function launchView(content: Content, cells: Record<string, Cell>, state: rules.State, busy: string[], now = Date.now()) {
+  const open = now >= Date.parse(content.launch);
   const preflight = (cells.preflight?.data as PreflightReport[] | undefined) ?? [];
   const status = (cells.status?.data as StatusRepo[] | undefined) ?? [];
   const build = foreverBuild(cells.latest?.data as Latest | undefined);
@@ -135,7 +136,9 @@ export function launchView(content: Content, cells: Record<string, Cell>, state:
     .map((a) => {
       const report = preflight.find((p) => p.name === a.id);
       const ready = report ? rules.readiness(report.rows) : { light: "grey" as const, reasons: [cells.preflight?.error ?? "Watchtower has not heard from preflight yet."] };
-      const game = rules.inGame(a.id, a.checks.map((c) => c.id), state.ticks);
+      // (before launch nobody can run an in-game check: an untested one is neutral, "waiting for launch", and a check someone has already ticked, ok or broken, counts as it does after launch)
+      const tested = rules.inGame(a.id, a.checks.map((c) => c.id), state.ticks);
+      const game = open || tested.light !== "grey" ? tested : { light: "grey" as const, reasons: ["These start when Forever is out."] };
       const repo = status.find((s) => s.name === a.id);
       const zip = report?.rows.find((r) => r.label === "test zip");
       return {
@@ -183,6 +186,8 @@ export function launchView(content: Content, cells: Record<string, Cell>, state:
   const shots = cells["launch-shots"];
   return {
     launch: content.launch,
+    /** Launch time has come: the in-game checks can be run, so an untested one is a thing to do. */
+    open,
     overall,
     build: { ...buildV, pin: build?.pin, latest: build?.latest, toc },
     addons,

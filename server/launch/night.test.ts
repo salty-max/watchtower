@@ -174,6 +174,40 @@ describe("the content and the view", () => {
   });
 });
 
+describe("nothing to test before launch", () => {
+  const content = loadContent();
+  const launch = Date.parse(content.launch);
+  const cells = (now: number): Record<string, Cell> => ({ ...demoCells(now), ...demoLaunchCells(content, now) });
+  const tick = (a: string, c: string, v: "ok" | "broken"): r.State => ({ ...r.emptyState(), ticks: { [`${a}/${c}`]: v } });
+  test("before launch time an untested in-game check is neutral and says it starts at launch, and the view says it is not open", () => {
+    const v = launchView(content, cells(launch - 3600_000), r.emptyState(), [], launch - 3600_000);
+    expect(v.open).toBe(false);
+    for (const a of v.addons) {
+      expect(a.inGame.light).toBe("grey");
+      expect(a.inGame.reasons).toEqual(["These start when Forever is out."]);
+    }
+  });
+  test("a check ticked broken is still red before launch, because someone found something", () => {
+    const a = content.addons[0];
+    const v = launchView(content, cells(launch - 60_000), tick(a.id, a.checks[0].id, "broken"), [], launch - 60_000);
+    expect(v.addons.find((x) => x.id === a.id)?.inGame.light).toBe("red");
+  });
+  test("checks ticked before launch count: all ok is green and a partial run is amber, not 'starts at launch'", () => {
+    const a = content.addons[0];
+    const all = { ...r.emptyState(), ticks: Object.fromEntries(a.checks.map((c) => [`${a.id}/${c.id}`, "ok" as const])) };
+    expect(launchView(content, cells(launch - 60_000), all, [], launch - 60_000).addons.find((x) => x.id === a.id)?.inGame.light).toBe("green");
+    if (a.checks.length > 1) expect(launchView(content, cells(launch - 60_000), tick(a.id, a.checks[0].id, "ok"), [], launch - 60_000).addons.find((x) => x.id === a.id)?.inGame.light).toBe("amber");
+  });
+  test("from launch time on the view is open and the checks count as they did: untested is grey, a broken one red, all ok green", () => {
+    const a = content.addons[0];
+    const v = launchView(content, cells(launch), r.emptyState(), [], launch);
+    expect(v.open).toBe(true);
+    expect(v.addons.find((x) => x.id === a.id)?.inGame.reasons).toEqual(["not tested yet"]);
+    const ok = { ...r.emptyState(), ticks: Object.fromEntries(a.checks.map((c) => [`${a.id}/${c.id}`, "ok" as const])) };
+    expect(launchView(content, cells(launch), ok, [], launch).addons.find((x) => x.id === a.id)?.inGame.light).toBe("green");
+  });
+});
+
 describe("the open questions are gone", () => {
   test("the night's notes have no questions section, and the checklist carries none", () => {
     const content = loadContent();

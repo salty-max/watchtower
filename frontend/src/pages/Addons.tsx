@@ -145,17 +145,17 @@ export function AddonPage({ id, go }: { id: string; go: (id: string) => void }) 
       {la && (
         <Panel
           title="Launch night"
-          note={la.inGame.light === "grey" ? "Nothing has been tested in the game yet." : la.inGame.light === "red" ? "Something is broken in the game." : `${num(done)} of ${num(la.checks.length)} checks passed in the game.`}
+          note={la.inGame.light === "grey" ? (s.launch?.open ? "Nothing has been tested in the game yet." : "These checks start when Forever is out.") : la.inGame.light === "red" ? "Something is broken in the game." : `${num(done)} of ${num(la.checks.length)} checks passed in the game.`}
           action={
             <NavLink to="launch" go={go} className="text-sm text-dim hover:text-parchment">
-              Tick them on the Launch night page
+              {s.launch?.open ? "Tick them on the Launch night page" : "See launch night"}
             </NavLink>
           }
         >
           <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
             {(la.checks as Dict[]).map((c) => (
               <Line key={c.id} label={c.look}>
-                {c.tick === "ok" ? "Passed" : c.tick === "broken" ? "Broken" : "Not tested"}
+                {c.tick === "ok" ? "Passed" : c.tick === "broken" ? "Broken" : s.launch?.open ? "Not tested" : "Starts at launch"}
               </Line>
             ))}
           </ul>

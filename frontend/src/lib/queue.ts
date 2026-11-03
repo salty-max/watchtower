@@ -16,6 +16,8 @@ export type Item = {
   what: string;
   /** The addons a shared item stands for. */
   addons?: string[];
+  /** The repository to pull (`git pull --ff-only`) when that is all the item needs: a clean branch that is behind. A session is for thinking, not for this. */
+  pull?: string;
   /** The server's fix preview, when a session could start one (server/fix.ts). */
   fix?: Dict;
   /** The hand-over prompt that goes with a fix. */
@@ -93,7 +95,9 @@ function atoms(s: State): Atom[] {
         if (r.label === "CI") ciBlocked.add(a.name);
         if (DUPLICATES.has(r.label)) continue; // (the pull request, zip and store items say it)
         const what = r.label === "git" ? gitSentence(repos.get(a.name), r.text) : r.label === "CI" ? "has failing CI on its latest commit." : `has a problem that stops a release (${r.label}): ${r.text.replace(/\s+/g, " ")}`;
-        const item: Atom = { id: `rel/${a.name}/${r.label}`, light: "red", ...subject(a.name), what, fix: once(a), prompt: a.prompt };
+        const rp = repos.get(a.name);
+        const pull = r.label === "git" && rp && rp.branch === "main" && rp.behind > 0 && rp.ahead === 0 && rp.dirty === 0 ? a.name : undefined;
+        const item: Atom = { id: `rel/${a.name}/${r.label}`, light: "red", ...subject(a.name), what, ...(pull ? { pull } : { fix: once(a), prompt: a.prompt }) };
         if (r.label === "CI") ciItem.set(a.name, item);
         out.push(item);
       } else if (r.mark === "!") {
@@ -135,7 +139,8 @@ function atoms(s: State): Atom[] {
       else if ((m = why.match(/^#(\d+) (.*) is open$/))) what = `has pull request #${m[1]} open: ${m[2]}.`;
       else if (/gh gave nothing/.test(why)) what = "has CI and pull requests that Watchtower could not read.";
       else if (/git could not read it/.test(why)) what = "could not be read by git.";
-      out.push({ id: `repo/${r.name}/${why}`, light, ...sub, what, fix: r.fix, prompt: r.prompt });
+      const pull = /behind origin/i.test(why) && r.branch === "main" && r.ahead === 0 && r.dirty === 0 ? r.name : undefined;
+      out.push({ id: `repo/${r.name}/${why}`, light, ...sub, what, ...(pull ? { pull } : { fix: r.fix, prompt: r.prompt }) });
     }
   }
   // Data: the daily jobs and the pull requests they open
@@ -207,7 +212,8 @@ function atoms(s: State): Atom[] {
   if (L) {
     for (const k of ["build", "infra", "sources"] as const)
       for (const why of (L[k].reasons ?? []) as string[]) out.push({ id: `launch/${k}/${why}`, light: L[k].light, who: "", what: why }); // (the server writes these as whole sentences)
-    for (const a of L.addons as Dict[]) if (a.inGame.light === "grey") out.push({ id: `launch/ingame/${a.id}`, light: "amber", ...subject(a.id), what: SHARED.ingame.one, kind: "ingame" });
+    // (an in-game check cannot be run before Forever is out: until launch time it is not a thing to do)
+    if (L.open) for (const a of L.addons as Dict[]) if (a.inGame.light === "grey") out.push({ id: `launch/ingame/${a.id}`, light: "amber", ...subject(a.id), what: SHARED.ingame.one, kind: "ingame" });
   }
   // (a hand-over prompt is the fallback of a fix a session could start: with no fix there is nothing to copy)
   for (const o of out) if (!o.fix) o.prompt = undefined;

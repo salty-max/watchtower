@@ -1,12 +1,12 @@
 // The allow-list: what a POST may start, and nothing else.
 import { describe, expect, test } from "bun:test";
-import { action, CARD_STATUSES, everyArgv, safe, STORE_REPOS } from "./actions";
+import { action, CARD_STATUSES, everyArgv, pullArgv, pullRefusal, safe, STORE_REPOS, statusArgv } from "./actions";
 import { forbidden } from "./sources";
 
 describe("the harmless actions", () => {
   test("no argv the table can make carries a word that publishes, merges or starts anything", () => {
     const all = everyArgv();
-    expect(all.length).toBe(STORE_REPOS.length + CARD_STATUSES.length);
+    expect(all.length).toBe(STORE_REPOS.length + CARD_STATUSES.length + 2);
     // ("ready-to-push" is a card status board.ts stores, not a verb: it is the one word exempt)
     for (const argv of all) expect(forbidden(argv.filter((w) => w !== "ready-to-push"))).toBe(false);
   });
@@ -29,5 +29,24 @@ describe("the harmless actions", () => {
     expect("error" in action({ name: "exec", argv: ["git", "push"] })).toBe(true);
     expect(safe(action({ name: "card", id: "x", status: "ready-to-push", argv: ["git", "push"] }))).toBe(true);
     expect((action({ name: "card", id: "x", status: "done", argv: ["git", "push"] }) as { argv: string[] }).argv).not.toContain("git");
+  });
+});
+
+describe("the pull", () => {
+  test("its argv is git, one repository and --ff-only: never a merge, a push or a rewrite", () => {
+    expect(pullArgv("goodwill")).toEqual(["git", "-C", "goodwill", "pull", "--ff-only"]);
+    expect(statusArgv("goodwill")).toEqual(["git", "-C", "goodwill", "status", "--porcelain", "--branch"]);
+  });
+  test("a clean branch that is behind may be pulled", () => {
+    expect(pullRefusal("## main...origin/main [behind 1]\n")).toBeUndefined();
+    expect(pullRefusal("## main...origin/main\n")).toBeUndefined();
+  });
+  test("commits not pushed, uncommitted files, no upstream and no branch are each refused in plain words", () => {
+    expect(pullRefusal("## main...origin/main [ahead 2, behind 1]\n")).toContain("2 commits not pushed");
+    expect(pullRefusal("## main...origin/main [ahead 1]\n")).toContain("1 commit not pushed");
+    expect(pullRefusal("## main...origin/main [behind 1]\n M src/a.ts\n?? b.ts\n")).toContain("2 uncommitted files");
+    expect(pullRefusal("## main\n")).toContain("no upstream");
+    expect(pullRefusal("## HEAD (no branch)\n")).toContain("not on a branch");
+    expect(pullRefusal("")).toContain("did not say");
   });
 });

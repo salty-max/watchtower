@@ -130,20 +130,20 @@ function Addons({ L, go }: { L: Dict; go: (id: string) => void }) {
   // (until the user opens or closes one, the open one follows the readings: the first that is not ready)
   const shown = open ?? (L.addons as Dict[]).filter((a) => a.light !== "green").slice(0, 1).map((a) => a.id);
   return (
-    <Panel title="Addons" note="In the order to test them. Open one to tick its checks.">
+    <Panel title="Addons" note={L.open ? "In the order to test them. Open one to tick its checks." : "These checks start when Forever is out. They are listed in the order to test them."}>
       <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
         {(L.addons as Dict[]).map((a) => (
-          <AddonRow key={a.id} a={a} go={go} shown={shown.includes(a.id)} toggle={() => setOpen(shown.includes(a.id) ? shown.filter((x) => x !== a.id) : [...shown, a.id])} />
+          <AddonRow key={a.id} a={a} go={go} open={!!L.open} shown={shown.includes(a.id)} toggle={() => setOpen(shown.includes(a.id) ? shown.filter((x) => x !== a.id) : [...shown, a.id])} />
         ))}
       </ul>
     </Panel>
   );
 }
 
-function AddonRow({ a, go, shown, toggle }: { a: Dict; go: (id: string) => void; shown: boolean; toggle: () => void }) {
+function AddonRow({ a, go, shown, toggle, open }: { a: Dict; go: (id: string) => void; shown: boolean; toggle: () => void; open: boolean }) {
   const { change, copy } = useApp();
   const done = a.checks.filter((c: Dict) => c.tick === "ok").length;
-  const game = a.inGame.light === "grey" ? "Not tested" : a.inGame.light === "red" ? "Broken" : `${num(done)} of ${num(a.checks.length)} passed`;
+  const game = a.inGame.light === "grey" ? (open ? "Not tested" : "Starts at launch") : a.inGame.light === "red" ? "Broken" : `${num(done)} of ${num(a.checks.length)} passed`;
   return (
     <li id={`card-${a.id}`} className="py-2.5">
       <div className="flex items-center gap-3">

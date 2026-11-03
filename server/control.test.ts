@@ -73,6 +73,49 @@ describe("the server", () => {
     expect((await ask(h, "/api/action", { method: "POST", headers: keyed, body: { name: "card", id: "a-card", status: "done" } })).status).toBe(200);
     expect(ran).toHaveLength(2);
   });
+  describe("a pull", () => {
+    const out = (text: string) => async (argv: string[]) => (ran.push(argv), { out: text, code: 0, timedOut: false });
+    const withStatus = (e: ReturnType<typeof make>["engine"]) => void (e.cells.status = { at: 1, ms: 1, data: [{ name: "goodwill" }] });
+    const pull = (h: ReturnType<typeof make>["h"], body: object) => ask(h, "/api/action", { method: "POST", headers: keyed, body: { name: "pull", ...body } });
+    test("a clean branch that is behind is pulled with --ff-only in that repository, and the output comes back", async () => {
+      ran.length = 0;
+      const { h, engine } = make({ exec: out("## main...origin/main [behind 1]\n") });
+      withStatus(engine);
+      const res = await (await pull(h, { repo: "goodwill" })).json();
+      expect(res.ok).toBe(true);
+      expect(ran).toEqual([["git", "-C", "goodwill", "status", "--porcelain", "--branch"], ["git", "-C", "goodwill", "pull", "--ff-only"]]);
+    });
+    test("a dirty tree or unpushed commits are refused before anything is pulled", async () => {
+      for (const status of ["## main...origin/main [behind 1]\n M a.ts\n", "## main...origin/main [ahead 1, behind 1]\n"]) {
+        ran.length = 0;
+        const { h, engine } = make({ exec: out(status) });
+        withStatus(engine);
+        const res = await (await pull(h, { repo: "goodwill" })).json();
+        expect(res.ok).toBe(false);
+        expect(res.out).toMatch(/nothing was pulled/i);
+        expect(ran).toHaveLength(1);
+      }
+    });
+    test("a repository a running card holds is left alone, and a waiting card holds nothing", async () => {
+      for (const [status, pulled] of [["running", false], ["waiting-review", true]] as const) {
+        ran.length = 0;
+        const { h, engine } = make({ exec: out("## main...origin/main [behind 1]\n") });
+        withStatus(engine);
+        engine.cells.board = { at: 1, ms: 1, data: [{ id: "c", title: "A card", status, repos: ["goodwill"] }] };
+        const res = await (await pull(h, { repo: "goodwill" })).json();
+        expect(res.ok).toBe(pulled);
+        if (!pulled) expect(res.out).toContain('held by the card "A card"');
+        expect(ran.length).toBe(pulled ? 2 : 0);
+      }
+    });
+    test("only a repository status read, a plain name, and no forbidden word", async () => {
+      ran.length = 0;
+      const { h, engine } = make();
+      withStatus(engine);
+      for (const repo of ["yonder", "../etc", "goodwill --upload-pack=x", "", undefined]) expect((await pull(h, { repo })).status).toBe(400);
+      expect(ran).toHaveLength(0);
+    });
+  });
   test("a card's status refreshes the board afterwards", async () => {
     ran.length = 0;
     const { h, engine } = make();
