@@ -25,6 +25,7 @@ const fixer = (over = {}) =>
   new Fixer({
     dir,
     now: () => clock,
+    env: { USER: "u", LOGNAME: "u" },
     launchRepos: new Set(["keyring", "addon-kit"]),
     registry: () => live,
     agents: async () => agents,
@@ -426,6 +427,16 @@ describe("preview, then one press", () => {
     expect(await f.preview("keyring/ci/Other", cellsWith())).toMatchObject({ error: expect.stringContaining("no fix") });
     expect(await f.preview("../../etc/passwd", cellsWith())).toMatchObject({ error: expect.any(String) });
     expect(await f.preview("keyring/ci/CI", cellsWith({ status: cell([]) }))).toMatchObject({ error: expect.any(String) });
+  });
+
+  test("an environment without USER or LOGNAME is refused up front: claude could not log in", async () => {
+    const f = fixer({ env: { HOME: "/h", PATH: "/bin" } });
+    expect(await f.preview("keyring/ci/CI", cellsWith())).toMatchObject({ error: expect.stringContaining("no USER or LOGNAME") });
+    const ok = fixer({ env: { USER: "u", LOGNAME: "u" } });
+    const p = (await ok.preview("keyring/ci/CI", cellsWith())) as { token: string };
+    expect(p.token).toBeDefined();
+    expect(await fixer({ env: {} }).start(p.token, cellsWith())).toMatchObject({ error: expect.stringContaining("preview is spent") });
+    expect(ran).toEqual([]);
   });
 
   test("the demo records the argv and starts nothing", async () => {

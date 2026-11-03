@@ -352,7 +352,7 @@ export type Spawn = (argv: string[], ms: number) => Promise<{ out: string; code:
 export type Preview = { token: string; key: string; title: string; kind: Kind; model: string; repos: string[]; prompt: string; argv: string[]; reportsTo: string; launchLine?: string; expiresAt: number };
 type Pending = { key: string; stamp: string; task: string; opener: string; expiresAt: number };
 
-export type FixerOpts = { spawn: Spawn; now?: () => number; dir?: string; demo?: boolean; launchRepos?: Set<string>; registry?: () => Live[]; agents?: () => Promise<Agent[]> };
+export type FixerOpts = { env?: Record<string, string | undefined>; spawn: Spawn; now?: () => number; dir?: string; demo?: boolean; launchRepos?: Set<string>; registry?: () => Live[]; agents?: () => Promise<Agent[]> };
 
 export class Fixer {
   private pending = new Map<string, Pending>();
@@ -436,7 +436,15 @@ export class Fixer {
     return { fixes: candidates(cells, x.now).map((c) => fixView(c, x)), dispatchers: dispatchers(x.live), dispatcher: pickDispatcher(x.live, x.dispatcher)?.sessionId };
   }
 
+  /** `claude` logs in through the keychain, which needs USER and LOGNAME (F0's probe: without them the session starts and answers "Not logged in"). A GUI app has them from launchd; a server started some other way may not. */
+  private loginProblem = (): string | undefined => {
+    const env = this.o.env ?? process.env;
+    return this.o.demo || (env.USER && env.LOGNAME) ? undefined : "the app's environment has no USER or LOGNAME, so claude could not log in: start the app from Finder or the Dock";
+  };
+
   async preview(key: string, cells: Record<string, Cell>): Promise<Preview | { error: string }> {
+    const noLogin = this.loginProblem();
+    if (noLogin) return { error: noLogin };
     const c = candidates(cells, this.now()).find((k) => k.key === key);
     if (!c) return { error: "that light is not red any more, or has no fix" };
     const x = await this.ctx(cells);
@@ -500,6 +508,8 @@ export class Fixer {
   }
 
   private async go(p: Pending, cells: Record<string, Cell>): Promise<{ ok: true; id?: string; out: string } | { error: string }> {
+    const noLogin = this.loginProblem();
+    if (noLogin) return { error: noLogin };
     const c = candidates(cells, this.now()).find((k) => k.key === p.key);
     if (!c || c.stamp !== p.stamp) return { error: "the light changed since the preview: preview again" };
     const x = await this.ctx(cells);

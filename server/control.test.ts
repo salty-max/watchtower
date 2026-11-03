@@ -152,7 +152,7 @@ describe("fix sessions' routes", () => {
   const withFixer = () => {
     spawned.length = 0;
     rmSync(join(fixDir, "fixes.json"), { force: true });
-    const fixer = new Fixer({ dir: fixDir, registry: () => [DISPATCH], agents: async () => [], spawn: async (argv) => (spawned.push(argv), { out: 'opened "x" (opusplan) as abc12345\n', code: 0, timedOut: false }) });
+    const fixer = new Fixer({ dir: fixDir, env: { USER: "u", LOGNAME: "u" }, registry: () => [DISPATCH], agents: async () => [], spawn: async (argv) => (spawned.push(argv), { out: 'opened "x" (opusplan) as abc12345\n', code: 0, timedOut: false }) });
     const m = make({ fixer });
     m.engine.cells = demoCells();
     return m;
@@ -192,7 +192,7 @@ describe("fix sessions' routes", () => {
   });
 
   test("a fixer that breaks, or a malformed reading, never takes the state down; a null body is a 400, not a crash", async () => {
-    const broken = new Fixer({ dir: fixDir, registry: () => { throw new Error("registry gone"); }, agents: async () => [], spawn: async () => ({ out: "", code: 0, timedOut: false }) });
+    const broken = new Fixer({ dir: fixDir, env: { USER: "u", LOGNAME: "u" }, registry: () => { throw new Error("registry gone"); }, agents: async () => [], spawn: async () => ({ out: "", code: 0, timedOut: false }) });
     const m = make({ fixer: broken });
     m.engine.cells = demoCells();
     const res = await ask(m.h, "/api/state", { headers: keyed });
