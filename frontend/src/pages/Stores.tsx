@@ -36,7 +36,7 @@ export function Stores() {
   };
   const rows = [...(s.stores as Dict[])].sort((a, b) => RANK[a.verdict.light] - RANK[b.verdict.light] || a.repo.localeCompare(b.repo));
   const differ = rows.filter((x) => x.read && x.due.length).length;
-  const unread = rows.filter((x) => !x.read || !("state" in x.wago)).length;
+  const unread = rows.filter((x) => (!x.read && x.why !== "not-on-curseforge") || (x.read && !("state" in x.wago))).length;
   return (
     <div>
       <h1 className="title text-[26px] leading-tight text-parchment">Stores</h1>

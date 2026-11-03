@@ -96,11 +96,13 @@ function FixDialog({ fix, onClose, onStarted }: { fix: Fix; onClose: () => void;
   const [expired, setExpired] = useState(false);
   const asked = useRef(false);
   const seq = useRef(0);
-  const dispatchers = ((state as Dict).dispatchers ?? []) as { sessionId: string; name: string; status?: string; likely?: boolean }[];
-  const chosen = (state as Dict).dispatcher as string | null | undefined;
+  const pressed = useRef(false); // (a second click lands before the render that disables the button: only the first press goes, and a new preview is the only thing that re-arms it)
+  const dispatchers = state?.dispatchers ?? [];
+  const chosen = state?.dispatcher;
 
   const preview = async () => {
     const mine = ++seq.current; // (an older answer that lands late is a dead token: ignored)
+    pressed.current = false;
     setPv(undefined);
     setError(undefined);
     setExpired(false);
@@ -138,7 +140,8 @@ function FixDialog({ fix, onClose, onStarted }: { fix: Fix; onClose: () => void;
     }
   };
   const start = async () => {
-    if (!pv || starting || expired) return;
+    if (!pv || pressed.current || expired) return;
+    pressed.current = true;
     setStarting(true);
     try {
       const r = await call<Dict>("/api/fix/start", { token: pv.token });

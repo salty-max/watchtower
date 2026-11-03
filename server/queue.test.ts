@@ -59,4 +59,22 @@ describe("what the dedupes must not hide", () => {
     const s = base({ data: { jobs: [], prs: [{ repo: "wow-data", number: 42, title: "pins: forever", verdict: { light: "red", reasons: ["wow-data #42 pins: forever: its checks failure"] } }], builds: { light: "green", reasons: [] }, errors: [], verdict: { light: "red", reasons: [] } } });
     expect(queue(s)[0].what).toBe("pins: forever: its checks failure");
   });
+  test("commits to push on a repository that is dirty, behind or unread are in the way, and a CI that is not success is red", () => {
+    const s = base({ releases: { addons: [], repos: [
+      { name: "wow-data", ahead: 2, behind: 0, dirty: 3, verdict: { light: "green", reasons: [] } },
+      { name: "addon-kit", ahead: 0, behind: 0, dirty: 0, verdict: { light: "amber", reasons: ["CI timed_out"] } },
+    ], verdict: { light: "amber", reasons: [] } } });
+    const items = queue(s);
+    expect(items.find((i) => i.where === "wow-data")?.light).toBe("red");
+    expect(items.find((i) => i.where === "addon-kit")?.light).toBe("red");
+  });
+  test("an addon's fix sits on its first row only", () => {
+    const fix = { key: "yonder/release/preflight" };
+    const s = base({ releases: { addons: [{ name: "yonder", fix, rows: [{ mark: "✗", label: "git", text: "x" }, { mark: "✗", label: "interface", text: "y" }], verdict: { light: "red", reasons: [] } }], repos: [], verdict: { light: "red", reasons: [] } } });
+    expect(queue(s).filter((i) => i.fix)).toHaveLength(1);
+  });
+  test("an addon with no CurseForge project is not a reading that failed", () => {
+    const s = base({ stores: { stores: [{ repo: "goodwill", read: false, why: "not-on-curseforge", verdict: { light: "grey", reasons: ["not on CurseForge"] } }], verdict: { light: "grey", reasons: [] } } });
+    expect(queue(s)).toHaveLength(0);
+  });
 });

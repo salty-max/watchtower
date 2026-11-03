@@ -38,6 +38,8 @@ export function queue(s: State): Item[] {
   const gitBlocked = new Set<string>();
   const ciBlocked = new Set<string>();
   const ciRow = new Map<string, Item>();
+  const fixGiven = new Set<string>(); // (an addon's release fix sits on its first row only: one press starts one session)
+  const once = (a: Dict) => (fixGiven.has(a.name) ? undefined : (fixGiven.add(a.name), a.fix));
 
   // Releases: what is in the way of a release, per addon
   const sharedRows: Record<string, Dict[]> = {};
@@ -46,7 +48,7 @@ export function queue(s: State): Item[] {
       if (r.mark === "✗") {
         if (r.label === "git") gitBlocked.add(a.name);
         if (r.label === "CI") ciBlocked.add(a.name);
-        const row: Item = { id: `rel/${a.name}/${r.label}`, light: "red", where: a.name, what: `${first(r.text)}, so a release cannot run`, page: "releases", fix: a.fix, prompt: a.prompt };
+        const row: Item = { id: `rel/${a.name}/${r.label}`, light: "red", where: a.name, what: `${first(r.text)}, so a release cannot run`, page: "releases", fix: once(a), prompt: a.prompt };
         if (r.label === "CI") ciRow.set(a.name, row);
         add(row);
       } else if (r.mark === "!") {
@@ -58,21 +60,28 @@ export function queue(s: State): Item[] {
   for (const [key, list] of Object.entries(sharedRows)) {
     const names = [...new Set(list.map((x) => x.a.name as string))];
     if (names.length >= SHARED_FROM && SAYS[key]) add({ id: `rel/*/${key}`, light: "amber", where: `${names.length} of ${addons.length} addons`, what: SAYS[key], names, page: "releases" });
-    else for (const x of list) add({ id: `rel/${x.a.name}/${x.r.label}`, light: "amber", where: x.a.name, what: first(x.r.text), page: "releases", fix: x.a.fix, prompt: x.a.prompt });
+    else for (const x of list) add({ id: `rel/${x.a.name}/${x.r.label}`, light: "amber", where: x.a.name, what: first(x.r.text), page: "releases", fix: once(x.a), prompt: x.a.prompt });
   }
-  // Releases: repositories
+  // Releases: repositories. Commits to push on a repository that is behind, dirty or unread are in the way of the push: git would refuse, or nobody knows.
   for (const r of s.releases.repos as Dict[]) {
-    if (r.verdict.light === "green") continue;
-    for (const why of r.verdict.reasons as string[]) {
+    if (r.verdict.light === "green" && !(r.ahead > 0 && r.dirty > 0)) continue;
+    const reasons = r.verdict.reasons as string[];
+    if (r.ahead > 0 && !gitBlocked.has(r.name) && (r.behind > 0 || r.dirty > 0 || r.verdict.light === "red" || r.verdict.light === "grey")) {
+      add({ id: `repo/${r.name}/blocked`, light: "red", where: r.name, what: `${r.ahead} unpushed, ${[r.behind && `${r.behind} behind`, r.dirty && `${r.dirty} uncommitted`, ...reasons].filter(Boolean).join(", ")}`, page: "releases", fix: r.fix, prompt: r.prompt });
+      continue;
+    }
+    for (const why of reasons) {
+      if (/game data failure/i.test(why) && s.data.jobs.some((j: Dict) => j.repo === r.name && j.verdict.light === "red")) continue; // (the job row says it)
       if (ciBlocked.has(r.name) && /\bCI\b/.test(why)) {
         // (preflight's CI cross says it, and the CI fix is the repository line's: the cross's row takes it)
         const row = ciRow.get(r.name);
         if (row && r.fix) Object.assign(row, { fix: r.fix, prompt: r.prompt ?? row.prompt });
         continue;
       }
-      if (gitBlocked.has(r.name) && /behind origin|unpushed|uncommitted|dirty/i.test(why)) continue; // (the git row says it, a red CI or a pull request is not said there)
-      if (/game data failure/i.test(why) && s.data.jobs.some((j: Dict) => j.repo === r.name && j.verdict.light === "red")) continue; // (the job row says it)
-      add({ id: `repo/${r.name}/${why}`, light: /\bCI\b.*(fail|red)|fail.*\bCI\b/i.test(why) ? "red" : r.verdict.light === "grey" ? "grey" : "amber", where: r.name, what: why, page: "releases", fix: r.fix, prompt: r.prompt });
+      if (gitBlocked.has(r.name) && /behind origin|unpushed|uncommitted|dirty/i.test(why)) continue; // (the git row says it)
+      // (a CI that is not success, skipped or cancelled is red in the rules: only a run in flight is not)
+      const light: Light = /^CI /.test(why) && !/running/i.test(why) ? "red" : r.verdict.light === "grey" ? "grey" : "amber";
+      add({ id: `repo/${r.name}/${why}`, light, where: r.name, what: why, page: "releases", fix: r.fix, prompt: r.prompt });
     }
   }
   // Data
@@ -82,7 +91,7 @@ export function queue(s: State): Item[] {
   for (const why of s.data.builds.reasons as string[]) if (!(launchBuild && /^forever/i.test(why))) add({ id: `build/${why}`, light: s.data.builds.light, where: "Game builds", what: why, page: "data" });
   ((s.data.errors ?? []) as Dict[]).forEach((e, n) => add({ id: `err/${n}/${e.repo}`, light: "grey", where: e.repo, what: String(e.error), page: "data" }));
   // Stores and zips
-  for (const x of s.stores.stores as Dict[]) if (x.verdict.light !== "green") for (const why of x.verdict.reasons as string[]) add({ id: `store/${x.repo}/${why}`, light: x.verdict.light, where: x.repo, what: why, page: "stores", prompt: x.prompt });
+  for (const x of s.stores.stores as Dict[]) if (x.verdict.light !== "green" && x.why !== "not-on-curseforge") for (const why of x.verdict.reasons as string[]) add({ id: `store/${x.repo}/${why}`, light: x.verdict.light, where: x.repo, what: why, page: "stores", prompt: x.prompt });
   for (const x of s.zips.zips as Dict[]) if (x.verdict.light !== "green") for (const why of x.verdict.reasons as string[]) add({ id: `zip/${x.name}/${why}`, light: x.verdict.light, where: x.name, what: why, page: "zips", prompt: x.prompt });
   // Readings that failed or are old: a green on old data is not a green
   for (const id of ["releases", "data", "stores", "zips"] as const) {

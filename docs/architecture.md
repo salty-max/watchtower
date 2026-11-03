@@ -84,7 +84,12 @@ plain page. `docs/probe.md` has the probe that decided notifications and PATH.
   dropped), `/shell/open` (https links only, to the browser) and `/shell/info`
   from the shell itself. No page ever holds the key, and the server serves no
   page at all.
-- `frontend/`: the window. `src/pages/` Launch, Releases, Data, Stores, Zips;
+- `frontend/`: the window (redesigned 3 November 2026, `../ideas/watchtower-ux.md`).
+  `src/pages/` Overview (the queue of everything not green, red first: built in
+  the window from `/api/state` by `src/lib/queue.ts`, tested in
+  `server/queue.test.ts`), Releases (the sidebar's "Push wave"), Data, Stores,
+  Zips, Launch; `src/components/FixButton.tsx` holds `FixSlot`, the place at the
+  end of every red or amber row, and the fix button and its preview dialog;
   `src/lib/api.tsx` polls `/api/state` every 10 s. `bun run dev` in
   `frontend/` shows it in a browser with `bun server/control.ts --demo`
   (`WATCHTOWER_KEY=dev`, the Vite proxy adds the key as the shell does).
@@ -136,8 +141,9 @@ session that receives reports among the live ones. `/api/state` carries a
 `fix` field on each fixable row (CI on a repository line, a release on an
 addon line, a job, a pull request) and the flat `fixes`, `dispatchers`,
 `dispatcher`. `--demo` starts nothing and keeps its tries in memory, with a
-made-up dispatcher. Not decided here: the window's button (F3, `FixButton`,
-placed by the redesign) and Terminal's attach (F4).
+made-up dispatcher. The window's button is `FixButton` (F3, in the
+window's `FixSlot`); Terminal's attach (F4) is not built on the server yet, so its
+buttons show only once a fix carries `attach`.
 
 ## Not yet
 
@@ -162,3 +168,13 @@ its interval (`staleCache`) is amber on the pages it feeds and on the Launch
 page's Sources, with the reason, exactly as a failed reading is, so old data is
 never a fresh green. A cached one inside its interval keeps its verdict, with
 "(cached)" by its age and "Cached 5 min ago, reading again" in the sidebar.
+
+## The icons
+
+The app's icon is the painted logo (`assets/`) on macOS' icon grid:
+`scripts/icon.sh` makes `assets/app-icon.png` (1024 px, the `.icns`' source in
+`scripts/build.sh`) and `assets/app-icon-512.png` (embedded by `icon.go`, the
+Dock's). The menu-bar icon stays a status-coloured disc with a tower cut out
+(`icon.go`): the colour is the information, and the painted tower is mud at 16
+to 22 px. The window's mark and favicon are `frontend/public/icon.png`, the 64 px
+export.

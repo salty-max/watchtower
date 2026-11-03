@@ -8,7 +8,6 @@ export type State = {
   now: number;
   quiet: boolean;
   overall: Light;
-  open: string;
   pages: { id: string; label: string; light: Light }[];
   releases: Dict;
   data: Dict;

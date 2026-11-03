@@ -4,7 +4,7 @@ import { PAGE_NAME } from "@/lib/queue";
 import { ago } from "@/lib/format";
 
 /** The pages in the window's own order: the answer first, the night last. */
-export const ORDER = ["overview", "releases", "data", "stores", "zips", "launch"];
+const ORDER = ["overview", "releases", "data", "stores", "zips", "launch"];
 
 /** The window's left side: the name (under macOS's traffic lights), the pages with their lights, how fresh the readings are. */
 export function Sidebar({ page, go }: { page: string; go: (id: string) => void }) {

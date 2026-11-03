@@ -27,10 +27,7 @@ export function Releases() {
   const r = s.releases;
   const [shown, setShown] = useState<string[]>([]);
   const toggle = (n: string) => setShown((x) => (x.includes(n) ? x.filter((y) => y !== n) : [...x, n]));
-  const red = queue(s).filter((i) => i.page === "releases" && i.light === "red");
-  // (a repository with commits to push is not safe to push when it is behind, dirty or unread: git would refuse, or nobody knows)
-  const blocked = (r.repos as Dict[]).filter((p) => p.ahead > 0 && (p.behind > 0 || p.dirty > 0 || p.verdict.light === "red" || p.verdict.light === "grey") && !red.some((i) => i.where === p.name));
-  const inWay = [...red, ...blocked.map((p) => ({ id: `repo/${p.name}/blocked`, light: "red" as const, where: p.name as string, what: `${p.ahead} unpushed, ${[p.behind && `${p.behind} behind`, p.dirty && `${p.dirty} uncommitted`, ...p.verdict.reasons].filter(Boolean).join(", ")}`, page: "releases", fix: p.fix as Dict | undefined, prompt: p.prompt as string | undefined }))];
+  const inWay = queue(s).filter((i) => i.page === "releases" && i.light === "red");
   const waiting = (r.repos as Dict[]).filter((p) => p.ahead > 0 && !inWay.some((i) => i.where === p.name));
   const addons = [...(r.addons as Dict[])].sort((a, b) => RANK[a.verdict.light as string] - RANK[b.verdict.light as string]);
   const hasOther = addons.some((a) => cell(a, "other") !== "green");
