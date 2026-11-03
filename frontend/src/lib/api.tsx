@@ -18,6 +18,8 @@ export type State = {
   dispatchers?: { sessionId: string; name: string; status?: string; likely?: boolean }[];
   dispatcher?: string | null;
   fixError?: string;
+  /** Every fixable light's fix view (server/fix.ts), also those with no row. */
+  fixes?: { key: string; page: string; needsDispatcher?: boolean }[];
   cards: { id: string; title: string; status: string; repos?: string[] }[];
   /** `cached`: loaded from disk, no live reading yet. `stale`: and older than its interval. */
   ages: Record<string, { at: number; ms: number; error?: string; paused?: boolean; cached?: boolean; stale?: boolean }>;

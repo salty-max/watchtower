@@ -3,7 +3,7 @@ import { CopyButton, Modal } from "@/components/ui";
 import { call, useApp, type Dict } from "@/lib/api";
 
 /** The server's view of a fixable light (server/fix.ts FixView). Every string in it is untrusted text: drawn as text, never as markup or a link. */
-export type Fix = { key: string; kind: string; repo: string; repos: string[]; title: string; page: string; state: "offered" | "refused" | "running" | "waiting" | "ready-to-push" | "tried"; reason?: string; id?: string; card?: { id: string; status: string }; again?: boolean; attach?: string };
+export type Fix = { key: string; kind: string; repo: string; repos: string[]; title: string; page: string; state: "offered" | "refused" | "running" | "waiting" | "ready-to-push" | "tried"; reason?: string; id?: string; card?: { id: string; status: string }; again?: boolean; attach?: string; needsDispatcher?: boolean };
 
 type Preview = { token: string; title: string; model: string; repos: string[]; prompt: string; reportsTo: string; launchLine?: string; expiresAt: number };
 
@@ -26,6 +26,8 @@ export function FixButton({ fix }: { fix: Fix }) {
       </>
     );
   }
+  // (a missing dispatcher is one choice for every row: the bar at the head of the page offers it, so the rows say nothing)
+  if ((fix.state === "refused" || fix.state === "tried") && fix.needsDispatcher) return null;
   if (fix.state === "refused") return <span className={`${quiet} max-w-[16rem] text-right`}>{fix.reason}</span>;
   if (fix.state === "tried") {
     return fix.again ? (
@@ -234,5 +236,46 @@ export function FixSlot({ id, prompt, fix, label = "Copy prompt" }: { id: string
       {f && <FixButton fix={f} />}
       {!active && <CopyButton text={prompt} label={label} />}
     </span>
+  );
+}
+
+/** The one choice every fix waits on when no dispatcher is chosen: the live session that receives the reports and pushes. Shown at the head of a page whose rows are refused for want of it, in place of the same reason on every row. */
+export function DispatcherBar({ page }: { page?: "releases" | "data" }) {
+  const { state, reload, toast } = useApp();
+  // (on a page, only the fixes of its own rows ask: the overview has them all)
+  const need = (state?.fixes ?? []).some((f) => f.needsDispatcher && (!page || f.page === page));
+  if (!need) return null;
+  const list = state?.dispatchers ?? [];
+  const choose = async (el: HTMLSelectElement) => {
+    const session = el.value;
+    if (!session) return;
+    try {
+      await call("/api/fix/dispatcher", { session });
+      await reload();
+    } catch (e) {
+      el.value = ""; // (a choice that failed is not kept on show: the session may have ended since the last reading)
+      toast(e instanceof Error ? e.message : String(e), "error");
+      void reload();
+    }
+  };
+  return (
+    <p data-dispatcher-bar className="mt-4 flex flex-wrap items-center gap-3 border-l-2 border-edge-gold pl-3 text-[13px] text-dim">
+      <span>Fix sessions need a session to report to, the one that pushes what they commit.</span>
+      {list.length === 0 ? (
+        <span className="text-faint">Open a session to report to</span>
+      ) : (
+        <select className="field h-8 text-[13px]" aria-label="Report fixes to" defaultValue="" onChange={(e) => choose(e.target)}>
+          <option value="" disabled>
+            Report to…
+          </option>
+          {list.map((d) => (
+            <option key={d.sessionId} value={d.sessionId}>
+              {d.name}
+              {d.likely ? " (likely)" : ""}
+            </option>
+          ))}
+        </select>
+      )}
+    </p>
   );
 }

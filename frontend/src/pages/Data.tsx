@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import { FixSlot } from "@/components/FixButton";
+import { DispatcherBar, FixSlot } from "@/components/FixButton";
 import { Dot, PageNote } from "@/components/ui";
 import { useApp, type Dict } from "@/lib/api";
 import { ago } from "@/lib/format";
@@ -27,6 +27,7 @@ export function Data() {
     <div>
       <h1 className="title text-[26px] leading-tight text-parchment">Data</h1>
       <p className="mt-1.5 text-dim">The pull requests the daily jobs opened, and the jobs. A Players pull request is strangers' data: read before merging, never merged by itself.</p>
+      <DispatcherBar page="data" />
       <PageNote v={top} />
 
       <section className="mt-7" aria-label="Review queue">

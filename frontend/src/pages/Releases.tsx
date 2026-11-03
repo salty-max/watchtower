@@ -1,5 +1,5 @@
 import { Fragment, useState } from "react";
-import { FixSlot } from "@/components/FixButton";
+import { DispatcherBar, FixSlot } from "@/components/FixButton";
 import { Dot, PageNote } from "@/components/ui";
 import { useApp, type Dict, type Light } from "@/lib/api";
 import { queue } from "@/lib/queue";
@@ -37,6 +37,7 @@ export function Releases() {
     <div>
       <h1 className="title text-[26px] leading-tight text-parchment">Push wave</h1>
       <p className="mt-1.5 text-dim">What stands in the way of a push or a release, and what waits to go. Its order is the wow-releasing skill's.</p>
+      <DispatcherBar page="releases" />
       <PageNote v={{ light: r.verdict.light === "green" ? "amber" : r.verdict.light, reasons: r.verdict.reasons }} />
 
       <Band title="In the way" tone="text-blood" count={inWay.length} empty={r.verdict.light === "grey" ? "Not read yet." : "Nothing stands in the way of a push."}>

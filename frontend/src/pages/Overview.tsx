@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import { FixSlot } from "@/components/FixButton";
+import { DispatcherBar, FixSlot } from "@/components/FixButton";
 import { Dot, useNow } from "@/components/ui";
 import { useApp } from "@/lib/api";
 import { PAGE_NAME, queue, quiet, type Item } from "@/lib/queue";
@@ -34,6 +34,7 @@ export function Overview({ go }: { go: (id: string) => void }) {
     <div>
       <h1 className="title text-[26px] leading-tight text-parchment">{head}</h1>
       <p className="mt-1.5 text-dim">{[day, launch].filter(Boolean).join(". ")}.</p>
+      <DispatcherBar />
       <Band title="In the way" tone="text-blood" items={red} go={go} open={open} />
       <Band title="To look at" tone="text-amber" items={amber} go={go} open={open} />
       <Band title="Not read" tone="text-faint" items={grey} go={go} open={open} />
