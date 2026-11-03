@@ -201,6 +201,10 @@ describe("the gates", () => {
     expect(refusal(c, ctx({ live: [{ ...DISPATCH, socket: undefined }] }))).toContain("no dispatcher");
     expect(refusal(c, ctx({ live: [{ ...DISPATCH, socket: "/tmp/x y.sock" }] }))).toContain("no dispatcher");
     expect(refusal(c, ctx())).toBeUndefined();
+    // (the window then offers the live sessions to choose from)
+    expect(fixView(c, ctx({ live: [] }))).toMatchObject({ state: "refused", needsDispatcher: true });
+    expect(fixView(c, ctx({ live: [{ ...DISPATCH, name: "plain work" }] }))).toMatchObject({ state: "refused", needsDispatcher: true });
+    expect(fixView(c, ctx({ agents: [{ name: "Fix: a ci b" }, { name: "Fix: c ci d" }, { name: "Fix: e ci f" }] })).needsDispatcher).toBeUndefined();
   });
 
   test("the chosen dispatcher wins when alive, else the newest idle one named as a dispatch", () => {

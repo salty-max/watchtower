@@ -271,8 +271,12 @@ function writeJson(file: string, v: unknown): void {
 // ── the gates and the state ─────────────────────────────────────────────────
 export type Agent = { name?: string; sessionId?: string; id?: string; state?: string; status?: string };
 export type FixState = "offered" | "refused" | "running" | "waiting" | "ready-to-push" | "tried";
-export type FixView = { key: string; kind: Kind; repo: string; repos: string[]; title: string; page: PageId; state: FixState; reason?: string; id?: string; card?: { id: string; status: string }; again?: boolean; attach?: string };
+export type FixView = { key: string; kind: Kind; repo: string; repos: string[]; title: string; page: PageId; state: FixState; reason?: string; id?: string; card?: { id: string; status: string }; again?: boolean; attach?: string;
+  /** The only thing in the way is that no dispatcher is chosen or alive: the window offers `dispatchers` to choose from. */
+  needsDispatcher?: boolean;
+};
 /** A session's short id, as `claude agents` and session.ts give it: the only thing that ever reaches the attach command. */
+const NO_DISPATCHER = "no dispatcher session is alive to receive the report (open one, or choose it)";
 const SHORT_ID = /^[0-9a-f]{8}$/;
 const attachOf = (id?: string): { attach?: string } => (id && SHORT_ID.test(id) ? { attach: `claude attach ${id}` } : {});
 
@@ -311,7 +315,7 @@ export function refusal(c: Candidate, x: Ctx): string | undefined {
     if (c.page !== "releases" || !c.repos.every((r) => x.launchRepos.has(r))) return "launch night: only the launch checklist's repositories, on the Push wave page";
     if (live.length > 0) return "launch night: one fix session at a time";
   }
-  if (!pickDispatcher(x.live, x.dispatcher)) return "no dispatcher session is alive to receive the report (open one, or choose it)";
+  if (!pickDispatcher(x.live, x.dispatcher)) return NO_DISPATCHER;
   if (live.length >= MAX_LIVE) return `${MAX_LIVE} fix sessions are running already`;
   const mine = live.find((l) => l.repos.some((r) => c.repos.includes(r)));
   if (mine) return `${c.repos.find((r) => mine.repos.includes(r))} is held by the fix session "${mine.title}"`;
@@ -340,7 +344,7 @@ export function fixView(c: Candidate, x: Ctx): FixView {
     return { ...base, state: "tried", id, again: again && !why, ...(why ? { reason: why } : {}) };
   }
   const why = refusal(c, x);
-  return why ? { ...base, state: "refused", reason: why } : { ...base, state: "offered" };
+  return why ? { ...base, state: "refused", reason: why, ...(why === NO_DISPATCHER ? { needsDispatcher: true } : {}) } : { ...base, state: "offered" };
 }
 
 // ── preview and start ───────────────────────────────────────────────────────
