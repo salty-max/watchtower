@@ -341,7 +341,7 @@ export function fixView(c: Candidate, x: Ctx): FixView {
     const ended = rec.endedAt ?? x.now;
     const again = x.now - ended >= COOLDOWN_MS || rec.stamp !== c.stamp;
     const why = again ? refusal(c, x) : `its session ended ${Math.ceil((x.now - ended) / 60_000)} minutes ago, a cool-down of 30`;
-    return { ...base, state: "tried", id, again: again && !why, ...(why ? { reason: why } : {}) };
+    return { ...base, state: "tried", id, again: again && !why, ...(why ? { reason: why } : {}), ...(why === NO_DISPATCHER ? { needsDispatcher: true } : {}) };
   }
   const why = refusal(c, x);
   return why ? { ...base, state: "refused", reason: why, ...(why === NO_DISPATCHER ? { needsDispatcher: true } : {}) } : { ...base, state: "offered" };

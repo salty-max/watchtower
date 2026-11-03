@@ -204,6 +204,9 @@ describe("the gates", () => {
     // (the window then offers the live sessions to choose from)
     expect(fixView(c, ctx({ live: [] }))).toMatchObject({ state: "refused", needsDispatcher: true });
     expect(fixView(c, ctx({ live: [{ ...DISPATCH, name: "plain work" }] }))).toMatchObject({ state: "refused", needsDispatcher: true });
+    // (a row stuck only on the dispatcher after its cool-down raises the chooser too)
+    const old = { [c.key]: { title: c.title, at: NOON - 3 * 3_600_000, endedAt: NOON - 2 * 3_600_000, stamp: c.stamp, repos: ["keyring"] } };
+    expect(fixView(c, ctx({ live: [], records: old }))).toMatchObject({ state: "tried", again: false, needsDispatcher: true });
     expect(fixView(c, ctx({ agents: [{ name: "Fix: a ci b" }, { name: "Fix: c ci d" }, { name: "Fix: e ci f" }] })).needsDispatcher).toBeUndefined();
   });
 
