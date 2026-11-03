@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
-import { Dot, FixSlot, PageNote } from "@/components/ui";
+import { FixSlot } from "@/components/FixButton";
+import { Dot, PageNote } from "@/components/ui";
 import { useApp, type Dict } from "@/lib/api";
 import { ago } from "@/lib/format";
 

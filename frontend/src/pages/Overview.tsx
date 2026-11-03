@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
-import { Dot, FixSlot, useNow } from "@/components/ui";
+import { FixSlot } from "@/components/FixButton";
+import { Dot, useNow } from "@/components/ui";
 import { useApp } from "@/lib/api";
 import { PAGE_NAME, queue, quiet, type Item } from "@/lib/queue";
 import { ago } from "@/lib/format";

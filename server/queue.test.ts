@@ -47,4 +47,16 @@ describe("what the dedupes must not hide", () => {
     const s = base({ launch: { build: { light: "amber", reasons: ["forever moved"] }, infra: { reasons: [] }, sources: { reasons: [] }, addons: [] }, data: { jobs: [], prs: [], builds: { light: "amber", reasons: ["forever moved", "classic: pin behind"] }, errors: [], verdict: { light: "amber", reasons: [] } } });
     expect(queue(s).some((i) => i.what === "classic: pin behind")).toBe(true);
   });
+  test("a red CI on an addon keeps the repository line's fix and prompt on its row", () => {
+    const fix = { key: "keyring/ci/CI", state: "offered" };
+    const s = base({ releases: { addons: [{ name: "keyring", rows: [{ mark: "✗", label: "CI", text: "failure on HEAD" }], verdict: { light: "red", reasons: [] }, fix: { key: "keyring/release/preflight" } }], repos: [{ name: "keyring", verdict: { light: "red", reasons: ["CI failure"] }, fix, prompt: "fix the CI" }], verdict: { light: "red", reasons: [] } } });
+    const rows = queue(s).filter((i) => i.where === "keyring");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].fix).toEqual(fix);
+    expect(rows[0].prompt).toBe("fix the CI");
+  });
+  test("a pull request's reason loses its own name and title", () => {
+    const s = base({ data: { jobs: [], prs: [{ repo: "wow-data", number: 42, title: "pins: forever", verdict: { light: "red", reasons: ["wow-data #42 pins: forever: its checks failure"] } }], builds: { light: "green", reasons: [] }, errors: [], verdict: { light: "red", reasons: [] } } });
+    expect(queue(s)[0].what).toBe("pins: forever: its checks failure");
+  });
 });

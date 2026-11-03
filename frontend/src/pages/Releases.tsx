@@ -1,5 +1,6 @@
 import { Fragment, useState } from "react";
-import { Dot, FixSlot, PageNote } from "@/components/ui";
+import { FixSlot } from "@/components/FixButton";
+import { Dot, PageNote } from "@/components/ui";
 import { useApp, type Dict, type Light } from "@/lib/api";
 import { queue } from "@/lib/queue";
 

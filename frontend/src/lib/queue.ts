@@ -36,6 +36,8 @@ export function queue(s: State): Item[] {
   const add = (i: Item) => out.push(i);
   const addons: Dict[] = s.releases.addons ?? [];
   const gitBlocked = new Set<string>();
+  const ciBlocked = new Set<string>();
+  const ciRow = new Map<string, Item>();
 
   // Releases: what is in the way of a release, per addon
   const sharedRows: Record<string, Dict[]> = {};
@@ -43,7 +45,10 @@ export function queue(s: State): Item[] {
     for (const r of a.rows as Dict[]) {
       if (r.mark === "✗") {
         if (r.label === "git") gitBlocked.add(a.name);
-        add({ id: `rel/${a.name}/${r.label}`, light: "red", where: a.name, what: `${first(r.text)}, so a release cannot run`, page: "releases", fix: a.fix, prompt: a.prompt });
+        if (r.label === "CI") ciBlocked.add(a.name);
+        const row: Item = { id: `rel/${a.name}/${r.label}`, light: "red", where: a.name, what: `${first(r.text)}, so a release cannot run`, page: "releases", fix: a.fix, prompt: a.prompt };
+        if (r.label === "CI") ciRow.set(a.name, row);
+        add(row);
       } else if (r.mark === "!") {
         const key = r.label === "deDE" || r.label === "esES" ? "translations" : r.label;
         if (key === "game data" && s.data.jobs.some((j: Dict) => j.repo === a.name && j.verdict.light === "red")) continue;
@@ -59,6 +64,12 @@ export function queue(s: State): Item[] {
   for (const r of s.releases.repos as Dict[]) {
     if (r.verdict.light === "green") continue;
     for (const why of r.verdict.reasons as string[]) {
+      if (ciBlocked.has(r.name) && /\bCI\b/.test(why)) {
+        // (preflight's CI cross says it, and the CI fix is the repository line's: the cross's row takes it)
+        const row = ciRow.get(r.name);
+        if (row && r.fix) Object.assign(row, { fix: r.fix, prompt: r.prompt ?? row.prompt });
+        continue;
+      }
       if (gitBlocked.has(r.name) && /behind origin|unpushed|uncommitted|dirty/i.test(why)) continue; // (the git row says it, a red CI or a pull request is not said there)
       if (/game data failure/i.test(why) && s.data.jobs.some((j: Dict) => j.repo === r.name && j.verdict.light === "red")) continue; // (the job row says it)
       add({ id: `repo/${r.name}/${why}`, light: /\bCI\b.*(fail|red)|fail.*\bCI\b/i.test(why) ? "red" : r.verdict.light === "grey" ? "grey" : "amber", where: r.name, what: why, page: "releases", fix: r.fix, prompt: r.prompt });
@@ -66,7 +77,7 @@ export function queue(s: State): Item[] {
   }
   // Data
   for (const j of s.data.jobs as Dict[]) if (j.verdict.light !== "green") add({ id: `job/${j.repo}/${j.workflow}`, light: j.verdict.light, where: j.repo, what: `${j.label}: ${j.text}`, page: "data", fix: j.fix, url: j.run?.url });
-  for (const p of s.data.prs as Dict[]) if (p.verdict.light !== "green") add({ id: `pr/${p.repo}/${p.number}`, light: p.verdict.light, where: `${p.repo} #${p.number}`, what: `${p.title}${p.verdict.reasons[0] ? `: ${p.verdict.reasons[0]}` : ""}`, page: "data", fix: p.fix, prompt: p.prompt, url: p.url });
+  for (const p of s.data.prs as Dict[]) if (p.verdict.light !== "green") add({ id: `pr/${p.repo}/${p.number}`, light: p.verdict.light, where: `${p.repo} #${p.number}`, what: `${p.title}${p.verdict.reasons[0] ? `: ${String(p.verdict.reasons[0]).replace(`${p.repo} #${p.number} ${p.title}: `, "")}` : ""}`, page: "data", fix: p.fix, prompt: p.prompt, url: p.url });
   const launchBuild = ((s.launch as Dict | undefined)?.build?.reasons ?? []).length > 0; // (launch night says Forever's, with the pins job: Classic's is only said here)
   for (const why of s.data.builds.reasons as string[]) if (!(launchBuild && /^forever/i.test(why))) add({ id: `build/${why}`, light: s.data.builds.light, where: "Game builds", what: why, page: "data" });
   ((s.data.errors ?? []) as Dict[]).forEach((e, n) => add({ id: `err/${n}/${e.repo}`, light: "grey", where: e.repo, what: String(e.error), page: "data" }));

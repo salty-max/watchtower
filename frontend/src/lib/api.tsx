@@ -15,6 +15,10 @@ export type State = {
   stores: Dict;
   zips: Dict;
   launch?: Dict;
+  /** Fix sessions (server/fix.ts): the sessions that may receive a report, the chosen one, and a note if the fix layer broke. */
+  dispatchers?: { sessionId: string; name: string; status?: string; likely?: boolean }[];
+  dispatcher?: string | null;
+  fixError?: string;
   cards: { id: string; title: string; status: string; repos?: string[] }[];
   /** `cached`: loaded from disk, no live reading yet. `stale`: and older than its interval. */
   ages: Record<string, { at: number; ms: number; error?: string; paused?: boolean; cached?: boolean; stale?: boolean }>;

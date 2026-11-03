@@ -1,4 +1,5 @@
-import { Dot, FixSlot, PageNote } from "@/components/ui";
+import { FixSlot } from "@/components/FixButton";
+import { Dot, PageNote } from "@/components/ui";
 import { useApp, type Dict } from "@/lib/api";
 
 const RANK: Record<string, number> = { red: 0, amber: 1, grey: 2, green: 3 };

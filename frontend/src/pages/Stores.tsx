@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Dot, FixSlot, Modal, PageNote } from "@/components/ui";
+import { FixSlot } from "@/components/FixButton";
+import { Dot, Modal, PageNote } from "@/components/ui";
 import { call, useApp, type Dict, type Light } from "@/lib/api";
 
 const RANK: Record<string, number> = { red: 0, amber: 1, grey: 2, green: 3 };
