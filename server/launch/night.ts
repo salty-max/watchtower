@@ -23,6 +23,9 @@ export type Content = {
 
 export const ICLOUD_DRIVE = join(homedir(), "Library", "Mobile Documents", "com~apple~CloudDocs");
 
+/** The repositories launch night watches: the addons and what they lean on (fix sessions are allowed on these in its window). */
+export const launchRepoSet = (content: Content): Set<string> => new Set([...content.addons.map((a) => a.id), "ravenpost", "wow-data", "addon-kit"]);
+
 export const loadContent = (): Content => JSON.parse(readFileSync(join(import.meta.dir, "night.json"), "utf8"));
 
 /**
@@ -151,7 +154,7 @@ export function launchView(content: Content, cells: Record<string, Cell>, state:
     ? rules.chain(status.filter((s) => s.name === "wow-data" || content.addons.some((a) => a.id === s.name)).map((s) => ({ name: s.name, runs: s.runs, prs: s.prs })), now, Date.parse(content.chainCheckAt))
     : { light: "grey" as const, reasons: [cells.status?.error ?? "status.ts has not answered yet"] };
   const infra = cells["launch-infra"]?.data ? rules.infra(cells["launch-infra"].data as rules.Probe[]) : { light: "grey" as const, reasons: ["not probed yet"] };
-  const launchRepos = new Set([...content.addons.map((a) => a.id), "ravenpost", "wow-data", "addon-kit"]);
+  const launchRepos = launchRepoSet(content);
   const cards = ((cells.board?.data as rules.Card[] | undefined) ?? []).filter((c) => c.status !== "done");
   const boardV = rules.board(cards, launchRepos);
 

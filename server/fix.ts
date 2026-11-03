@@ -86,41 +86,57 @@ export function candidates(cells: Record<string, Cell>, now = Date.now()): Candi
     if (c && !out.some((o) => o.key === c.key)) out.push(c);
   };
 
-  for (const r of data<rules.Repo[]>("status") ?? []) {
-    const run = (r.runs ?? []).find((x) => x.workflow === "CI" && x.status === "completed" && FAILED(x.conclusion));
-    if (!run) continue;
-    const facts: [string, string][] = [["workflow", "CI"], ["conclusion", String(run.conclusion).replace(/[^\w-]/g, "").slice(0, 30)]];
-    if (run.sha && SHA.test(run.sha)) facts.push(["commit", run.sha]);
-    if (run.at && !Number.isNaN(Date.parse(run.at))) facts.push(["run time", new Date(run.at).toISOString()]);
-    add(make("ci", r.name, "CI", "releases", facts, [], old("status")));
-  }
+  // (a tool's JSON of an unexpected shape loses that section's fixes, never the pages)
+  const guard = (f: () => void) => {
+    try {
+      f();
+    } catch {}
+  };
+  guard(() => {
+    for (const r of data<rules.Repo[]>("status") ?? []) {
+      const run = (r.runs ?? []).find((x) => x.workflow === "CI" && x.status === "completed" && FAILED(x.conclusion));
+      if (!run) continue;
+      const facts: [string, string][] = [["workflow", "CI"], ["conclusion", String(run.conclusion).replace(/[^\w-]/g, "").slice(0, 30)]];
+      if (run.sha && SHA.test(run.sha)) facts.push(["commit", run.sha]);
+      if (run.at && !Number.isNaN(Date.parse(run.at))) facts.push(["run time", new Date(run.at).toISOString()]);
+      add(make("ci", r.name, "CI", "releases", facts, [], old("status")));
+    }
 
-  for (const p of data<rules.Preflight[]>("preflight") ?? []) {
-    const stops = p.rows.filter((x) => x.mark === "✗" && x.label !== "CI");
-    if (stops.length === 0) continue;
-    add(make("release", p.name, "preflight", "releases", [["tag", /^[\w.+-]{1,40}$/.test(p.tag ?? "") ? (p.tag as string) : "(none)"]], stops.map((x) => `${x.label}: ${x.text}`), old("preflight")));
-  }
+  });
+  guard(() => {
+    for (const p of data<rules.Preflight[]>("preflight") ?? []) {
+      const stops = p.rows.filter((x) => x.mark === "✗" && x.label !== "CI");
+      if (stops.length === 0) continue;
+      add(make("release", p.name, "preflight", "releases", [["tag", /^[\w.+-]{1,40}$/.test(p.tag ?? "") ? (p.tag as string) : "(none)"]], stops.map((x) => `${x.label}: ${x.text}`), old("preflight")));
+    }
 
+  });
   const prs = data<rules.DataPrs>("data-prs");
-  for (const j of prs?.jobs ?? []) {
-    if (rules.job(j).light !== "red" || !j.run) continue;
-    const slug = j.workflow.replace(/\.ya?ml$/, "");
-    const id = j.run.url.match(/^https:\/\/github\.com\/salty-max\/[\w.-]+\/actions\/runs\/(\d+)$/)?.[1];
-    const facts: [string, string][] = [["workflow", `${slug}.yml`], ["conclusion", String(j.run.conclusion).replace(/[^\w-]/g, "").slice(0, 30)]];
-    if (id) facts.push(["run id", id], ["run url", j.run.url]);
-    add(make("job", j.repo, slug, "data", facts, [`${j.label}: ${j.text}`], old("data-prs")));
-  }
-  for (const p of prs?.prs ?? []) {
-    if ((p.kind !== "pins" && p.kind !== "game-data") || rules.dataPr(p, now).light !== "red" || !Number.isInteger(p.number)) continue;
-    const facts: [string, string][] = [["pull request", `#${p.number}`], ["kind", p.kind]];
-    add(make("pr", p.repo, `pr-${p.number}`, "data", facts, [`title: ${p.title}`, `branch: ${p.branch}`, `next: ${p.next}`, ...(p.checks ? [`checks: ${p.checks.text}`] : [])], old("data-prs")));
-  }
+  guard(() => {
+    for (const j of prs?.jobs ?? []) {
+      if (rules.job(j).light !== "red" || !j.run) continue;
+      const slug = j.workflow.replace(/\.ya?ml$/, "");
+      const id = j.run.url.match(/^https:\/\/github\.com\/salty-max\/[\w.-]+\/actions\/runs\/(\d+)$/)?.[1];
+      const facts: [string, string][] = [["workflow", `${slug}.yml`], ["conclusion", String(j.run.conclusion).replace(/[^\w-]/g, "").slice(0, 30)]];
+      if (id) facts.push(["run id", id], ["run url", j.run.url]);
+      add(make("job", j.repo, slug, "data", facts, [`${j.label}: ${j.text}`], old("data-prs")));
+    }
+  });
+  guard(() => {
+    for (const p of prs?.prs ?? []) {
+      if ((p.kind !== "pins" && p.kind !== "game-data") || rules.dataPr(p, now).light !== "red" || !Number.isInteger(p.number)) continue;
+      const facts: [string, string][] = [["pull request", `#${p.number}`], ["kind", p.kind]];
+      add(make("pr", p.repo, `pr-${p.number}`, "data", facts, [`title: ${p.title}`, `branch: ${p.branch}`, `next: ${p.next}`, ...(p.checks ? [`checks: ${p.checks.text}`] : [])], old("data-prs")));
+    }
 
-  for (const [id, repo] of Object.entries(SOURCE_REPO)) {
-    const c = cells[id];
-    if (!c?.error || c.paused) continue;
-    add(make("source", repo, id, SOURCE_PAGE[id], [["source", id]], [c.error]));
-  }
+  });
+  guard(() => {
+    for (const [id, repo] of Object.entries(SOURCE_REPO)) {
+      const c = cells[id];
+      if (!c?.error || c.paused) continue;
+      add(make("source", repo, id, SOURCE_PAGE[id], [["source", id]], [c.error]));
+    }
+  });
   return out;
 }
 
@@ -219,7 +235,7 @@ export function dispatchers(live: Live[]): Dispatcher[] {
   return live
     .filter((r) => r.kind !== "bg" && r.kind !== "background" && r.socket && SOCKET.test(r.socket) && SESSION_ID.test(r.sessionId) && r.name && r.nameSource !== "derived" && !r.name.startsWith(TITLE_PREFIX))
     .sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0))
-    .map((r) => ({ sessionId: r.sessionId, name: (r.name as string).replace(/\p{Cc}/gu, " ").slice(0, 120), status: r.status, likely: /dispatch/i.test(r.name as string) }));
+    .map((r) => ({ sessionId: r.sessionId, name: (r.name as string).replace(/\p{Cc}/gu, " ").slice(0, 120), status: /^\w{1,20}$/.test(r.status ?? "") ? r.status : undefined, likely: /dispatch/i.test(r.name as string) }));
 }
 
 /** The chosen one if it is alive, else the newest idle one named as a dispatch. Nothing alive: nothing starts. */
@@ -359,7 +375,24 @@ export class Fixer {
     return undefined;
   }
   live = (): Live[] => (this.o.registry ?? readRegistry)();
-  async agents(): Promise<Agent[]> {
+  private seen?: { at: number; rows: Agent[] };
+  private asking?: Promise<Agent[]>;
+  /** One `claude agents --json` at a time, shared by whoever asks while it runs. */
+  private refresh(): Promise<Agent[]> {
+    this.asking ??= this.ask()
+      .then((rows) => ((this.seen = { at: this.now(), rows }), rows))
+      .finally(() => (this.asking = undefined));
+    return this.asking;
+  }
+  /** `claude agents --json` costs a process. A preview and a start always wait for a fresh answer; the pages' polls take the last one at once and refresh it behind (the first poll waits). */
+  async agents(fresh = true): Promise<Agent[]> {
+    if (!fresh && this.seen) {
+      if (this.now() - this.seen.at >= 15_000) void this.refresh().catch(() => undefined);
+      return this.seen.rows;
+    }
+    return this.refresh();
+  }
+  private async ask(): Promise<Agent[]> {
     if (this.o.agents) return this.o.agents();
     if (this.o.demo) return [];
     try {
@@ -370,9 +403,9 @@ export class Fixer {
       return [];
     }
   }
-  async ctx(cells: Record<string, Cell>): Promise<Ctx> {
+  async ctx(cells: Record<string, Cell>, fresh = true): Promise<Ctx> {
     const now = this.now();
-    const agents = await this.agents();
+    const agents = await this.agents(fresh);
     const records = this.records();
     // (a record whose session shows no agent and no card, past its booting time, has ended: the cool-down runs from the moment it is first seen so)
     let changed = false;
@@ -381,12 +414,17 @@ export class Fixer {
       if (!r.endedAt && !shown && now - r.at >= BOOT_MS) (r.endedAt = now), (changed = true);
       else if (r.endedAt && shown) (delete r.endedAt), (changed = true);
     }
-    if (changed) this.saveRecords(records);
+    // (best effort on a poll: a folder that cannot be written must not break the pages)
+    if (changed) {
+      try {
+        this.saveRecords(records);
+      } catch {}
+    }
     return { now, cells, agents, live: this.live(), records, dispatcher: this.setting(), launchRepos: this.o.launchRepos ?? new Set() };
   }
   /** What the pages and the preview dialog need: every offered light, and who could receive the report. */
   async view(cells: Record<string, Cell>): Promise<{ fixes: FixView[]; dispatchers: Dispatcher[]; dispatcher?: string }> {
-    const x = await this.ctx(cells);
+    const x = await this.ctx(cells, false);
     return { fixes: candidates(cells, x.now).map((c) => fixView(c, x)), dispatchers: dispatchers(x.live), dispatcher: pickDispatcher(x.live, x.dispatcher)?.sessionId };
   }
 
@@ -455,4 +493,26 @@ export class Fixer {
     if (id) this.saveRecords({ ...this.records(), [c.key]: { ...mine, id } });
     return { ok: true, id, out: r.out.slice(-600) };
   }
+}
+
+/**
+ * Puts each light's fix on its row (`fix`, beside the row's `prompt`) and the
+ * whole list on the state (`fixes`, for a strip that wants it whatever the
+ * pages look like). Rows are matched by the candidate's key.
+ */
+export function attach(state: Record<string, any>, v: { fixes: FixView[]; dispatchers: Dispatcher[]; dispatcher?: string }): void {
+  const by = new Map(v.fixes.map((f) => [f.key, f]));
+  const put = (rows: any[] | undefined, key: (r: any) => string) => {
+    for (const r of rows ?? []) {
+      const f = by.get(key(r));
+      if (f) r.fix = f;
+    }
+  };
+  put(state.releases?.repos, (r) => `${r.name}/ci/CI`);
+  put(state.releases?.addons, (r) => `${r.name}/release/preflight`);
+  put(state.data?.jobs, (r) => `${r.repo}/job/${String(r.workflow).replace(/\.ya?ml$/, "")}`);
+  put(state.data?.prs, (r) => `${r.repo}/pr/pr-${r.number}`);
+  state.fixes = v.fixes;
+  state.dispatchers = v.dispatchers;
+  state.dispatcher = v.dispatcher ?? null;
 }

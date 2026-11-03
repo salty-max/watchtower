@@ -22,11 +22,12 @@ import { randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { demoData } from "./demo";
-import { demoLaunchCells, launchDefs, loadContent, notesMarkdown, stateFile, ICLOUD_DRIVE, type Content } from "./launch/night";
+import { demoLaunchCells, launchDefs, launchRepoSet, loadContent, notesMarkdown, stateFile, ICLOUD_DRIVE, type Content } from "./launch/night";
 import * as night from "./launch/rules";
 import { DiskCache } from "./cache";
 import { Engine, exec as realExec, toolDefs, type Cell, type Def, type Exec } from "./engine";
 import { action, safe } from "./actions";
+import { attach, Fixer, type Live } from "./fix";
 import { view } from "./view";
 import { listZips } from "./zips";
 
@@ -37,6 +38,8 @@ export type Deps = {
   demo?: boolean;
   /** Launch night: its checklist, and the file its ticks and notes live in. */
   night?: { content: Content; stateFile: string; shotsDir: string };
+  /** Fix sessions (server/fix.ts): without one there is no fix field and no route. */
+  fixer?: Fixer;
   /** The time, injected so the tests can stand inside launch night's window. */
   clock?: () => number;
 };
@@ -52,7 +55,16 @@ export function handler(deps: Deps, key: string, port: number) {
 
     if (req.method === "GET" && url.pathname === "/api/state") {
       const n = deps.night;
-      return respond(view(deps.engine.cells, deps.engine.busy(), (deps.clock ?? Date.now)(), n && { content: n.content, state: night.readState(n.stateFile) }));
+      const v = view(deps.engine.cells, deps.engine.busy(), (deps.clock ?? Date.now)(), n && { content: n.content, state: night.readState(n.stateFile) });
+      // (the fixes are a layer on the pages: whatever goes wrong in them never blanks the window)
+      if (deps.fixer) {
+        try {
+          attach(v, await deps.fixer.view(deps.engine.cells));
+        } catch (e) {
+          (v as Record<string, unknown>).fixError = e instanceof Error ? e.message : String(e);
+        }
+      }
+      return respond(v);
     }
     // (an <img> can't send a header, and in the app the shell adds the key to every request, an image's included)
     if (req.method === "GET" && url.pathname === "/api/shot" && deps.night) {
@@ -68,7 +80,8 @@ export function handler(deps: Deps, key: string, port: number) {
     // (a POST from a page of another origin never carries our key, and this is the second lock)
     const origin = req.headers.get("origin");
     if (origin && ![...hosts].some((h) => origin === `http://${h}`)) return new Response("not here", { status: 403 });
-    const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    const sent: unknown = await req.json().catch(() => ({}));
+    const body = (sent && typeof sent === "object" && !Array.isArray(sent) ? sent : {}) as Record<string, unknown>;
 
     if (url.pathname === "/api/refresh") {
       const name = String(body.source ?? "");
@@ -79,6 +92,20 @@ export function handler(deps: Deps, key: string, port: number) {
         return respond({ error: e instanceof Error ? e.message : String(e) }, 400);
       }
       return respond({ ok: true });
+    }
+
+    // a fix session: the preview (nothing started), then the second press with its one-time token
+    if (url.pathname === "/api/fix/preview" && deps.fixer) {
+      const p = await deps.fixer.preview(String(body.key ?? ""), deps.engine.cells);
+      return respond(p, "error" in p ? 400 : 200);
+    }
+    if (url.pathname === "/api/fix/start" && deps.fixer) {
+      const r = await deps.fixer.start(String(body.token ?? ""), deps.engine.cells);
+      return respond(r, "error" in r ? 400 : 200);
+    }
+    if (url.pathname === "/api/fix/dispatcher" && deps.fixer) {
+      const e = deps.fixer.choose(String(body.session ?? ""));
+      return e ? respond({ error: e }, 400) : respond({ ok: true });
     }
 
     if (url.pathname === "/api/change" && deps.night) {
@@ -120,6 +147,8 @@ if (import.meta.main) {
     exec: demo ? async (argv) => ({ out: `(demo) would run: ${argv.join(" ")}`, code: 0, timedOut: false }) : realExec,
     demo,
     night: { content, stateFile: stateFile(demo, tmpdir()), shotsDir: ICLOUD_DRIVE },
+    // (the demo starts nothing and keeps its tries in memory; a made-up dispatcher lets the window show the preview)
+    fixer: new Fixer({ spawn: realExec, demo, launchRepos: launchRepoSet(content), ...(demo ? { registry: (): Live[] => [{ sessionId: "0de0de0d-0000-0000-0000-000000000000", name: "the dispatch (demo)", status: "idle", socket: "/tmp/cc-socks/0.sock", kind: "interactive" }], agents: async () => [] } : {}) }),
   };
 
   if (args.includes("--once")) {

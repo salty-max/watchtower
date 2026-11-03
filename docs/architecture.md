@@ -125,8 +125,19 @@ from the session's end), at most three, repositories not held by a card or
 another fix (starts are served one at a time), a fresh board, a live
 dispatcher, launch night's window (Data paused, Releases lights of the
 launch checklist only, one at a time). State: `~/.cache/watchtower/fixes.json`
-and `fix-settings.json` (`WATCHTOWER_STATE_DIR` moves them). The routes and the
-window come with F2 and F3.
+and `fix-settings.json` (`WATCHTOWER_STATE_DIR` moves them).
+
+Routes (control.ts, behind the key and the origin check like the rest):
+`POST /api/fix/preview {key}` builds the prompt and answers `{token, prompt,
+repos, model, reportsTo, argv…}` and starts nothing, `POST /api/fix/start
+{token}` is the second press (the token works once, for five minutes, and the
+light must be unchanged), `POST /api/fix/dispatcher {session}` chooses the
+session that receives reports among the live ones. `/api/state` carries a
+`fix` field on each fixable row (CI on a repository line, a release on an
+addon line, a job, a pull request) and the flat `fixes`, `dispatchers`,
+`dispatcher`. `--demo` starts nothing and keeps its tries in memory, with a
+made-up dispatcher. Not decided here: the window's button (F3, `FixButton`,
+placed by the redesign) and Terminal's attach (F4).
 
 ## Not yet
 

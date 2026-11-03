@@ -1,12 +1,13 @@
 // The server: Host, key, origin, method, the actions' commands injected (none run), the demo's view.
 import { describe, expect, test } from "bun:test";
 import { handler, type Deps } from "./control";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { demoCells } from "./demo";
 import { demoLaunchCells, loadContent } from "./launch/night";
 import { Engine } from "./engine";
+import { Fixer, type Live } from "./fix";
 import { view } from "./view";
 
 const PORT = 4999;
@@ -141,5 +142,73 @@ describe("the demo", () => {
       expect((await ask(h, "/api/shot?f=..%2Fa.png", { headers: keyed })).status).toBe(404);
       expect((await ask(h, "/api/shot?f=a.png")).status).toBe(403);
     });
+  });
+});
+
+describe("fix sessions' routes", () => {
+  const DISPATCH: Live = { sessionId: "11112222-3333-4444-5555-666677778888", name: "the-dispatch", status: "idle", socket: "/tmp/cc-socks/9.sock", kind: "interactive" };
+  const fixDir = mkdtempSync(join(tmpdir(), "wt-fix-"));
+  const spawned: string[][] = [];
+  const withFixer = () => {
+    spawned.length = 0;
+    rmSync(join(fixDir, "fixes.json"), { force: true });
+    const fixer = new Fixer({ dir: fixDir, registry: () => [DISPATCH], agents: async () => [], spawn: async (argv) => (spawned.push(argv), { out: 'opened "x" (opusplan) as abc12345\n', code: 0, timedOut: false }) });
+    const m = make({ fixer });
+    m.engine.cells = demoCells();
+    return m;
+  };
+  const post = (h: ReturnType<typeof make>["h"], path: string, body: unknown, headers: Record<string, string> = keyed) => ask(h, path, { method: "POST", headers, body });
+
+  test("the state carries a fix on the red row and the list, and nothing without a fixer", async () => {
+    const v = (await (await ask(withFixer().h, "/api/state", { headers: keyed })).json()) as { fixes: { key: string; state: string }[]; dispatcher: string; releases: { repos: { name: string; fix?: { key: string; state: string } }[] } };
+    expect(v.fixes.map((f) => f.key)).toContain("keyring/ci/CI");
+    expect(v.releases.repos.find((r) => r.name === "keyring")?.fix).toMatchObject({ key: "keyring/ci/CI", state: "offered" });
+    expect(v.dispatcher).toBe(DISPATCH.sessionId);
+    const bare = (await (await ask(make().h, "/api/state", { headers: keyed })).json()) as { fixes?: unknown };
+    expect(bare.fixes).toBeUndefined();
+  });
+
+  test("preview starts nothing, the press with its token starts one, a replay and a missing key do not", async () => {
+    const { h } = withFixer();
+    const p = (await (await post(h, "/api/fix/preview", { key: "keyring/ci/CI" })).json()) as { token: string; prompt: string };
+    expect(p.prompt).toContain("BEGIN EVIDENCE");
+    expect(spawned).toEqual([]);
+    expect((await post(h, "/api/fix/start", { token: p.token }, {})).status).toBe(403);
+    const r = await post(h, "/api/fix/start", { token: p.token });
+    expect(r.status).toBe(200);
+    expect(spawned).toHaveLength(1);
+    expect(spawned[0].slice(0, 3)).toEqual(["bun", "addon-kit/session.ts", "Fix: keyring ci CI"]);
+    expect((await post(h, "/api/fix/start", { token: p.token })).status).toBe(400);
+    expect(spawned).toHaveLength(1);
+  });
+
+  test("an unknown light, a bad token and a foreign origin are refused, and without a fixer there is no route", async () => {
+    const { h } = withFixer();
+    expect((await post(h, "/api/fix/preview", { key: "nothing/ci/CI" })).status).toBe(400);
+    expect((await post(h, "/api/fix/start", { token: "nope" })).status).toBe(400);
+    expect((await post(h, "/api/fix/preview", { key: "keyring/ci/CI" }, { ...keyed, origin: "http://evil.example" })).status).toBe(403);
+    expect((await post(make().h, "/api/fix/preview", { key: "keyring/ci/CI" }, {})).status).toBe(403);
+    expect((await post(make().h, "/api/fix/preview", { key: "keyring/ci/CI" })).status).toBe(404);
+  });
+
+  test("a fixer that breaks, or a malformed reading, never takes the state down; a null body is a 400, not a crash", async () => {
+    const broken = new Fixer({ dir: fixDir, registry: () => { throw new Error("registry gone"); }, agents: async () => [], spawn: async () => ({ out: "", code: 0, timedOut: false }) });
+    const m = make({ fixer: broken });
+    m.engine.cells = demoCells();
+    const res = await ask(m.h, "/api/state", { headers: keyed });
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { fixError?: string }).fixError).toContain("registry gone");
+    // (a job with a run that has no url: the section is skipped)
+    const odd = withFixer();
+    (odd.engine.cells["data-prs"].data as { jobs: { run?: unknown }[] }).jobs[0].run = { conclusion: "failure", status: "completed" };
+    expect((await ask(odd.h, "/api/state", { headers: keyed })).status).toBe(200);
+    const nul = await ask(odd.h, "/api/fix/preview", { method: "POST", headers: keyed, body: null });
+    expect(nul.status).toBe(400);
+  });
+
+  test("the dispatcher is chosen among the live ones only", async () => {
+    const { h } = withFixer();
+    expect((await post(h, "/api/fix/dispatcher", { session: DISPATCH.sessionId })).status).toBe(200);
+    expect((await post(h, "/api/fix/dispatcher", { session: "not-alive" })).status).toBe(400);
   });
 });
