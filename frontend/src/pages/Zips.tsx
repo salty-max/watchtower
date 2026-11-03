@@ -1,12 +1,15 @@
-import { FixSlot } from "@/components/FixButton";
+import { RepoName } from "@/components/Row";
 import { Dot, PageNote } from "@/components/ui";
 import { useApp, type Dict } from "@/lib/api";
+import { addonIds } from "@/lib/queue";
 
 const RANK: Record<string, number> = { red: 0, amber: 1, grey: 2, green: 3 };
 
 /** Test zips: the zip in iCloud for each addon against its repository's HEAD, one table. A second zip of one addon is on the row: the older one goes to the Trash. */
-export function Zips() {
-  const z = useApp().state!.zips;
+export function Zips({ go }: { go: (id: string) => void }) {
+  const st = useApp().state!;
+  const z = st.zips;
+  const ids = addonIds(st);
   const rows = [...(z.zips as Dict[])].sort((a, b) => RANK[a.verdict.light] - RANK[b.verdict.light] || a.name.localeCompare(b.name));
   const loud = rows.filter((x) => x.verdict.light !== "green").length;
   const note = z.verdict.reasons.length ? z.verdict : { light: "grey", reasons: z.folderNote ? [z.folderNote] : [] };
@@ -33,14 +36,14 @@ export function Zips() {
                 <tr key={x.name} data-row={`zip/${x.name}`} className="border-t border-edge align-top">
                   <td className="py-2 pr-3 whitespace-nowrap">
                     <Dot light={x.verdict.light} className="mr-2" />
-                    <b className="font-semibold text-parchment">{x.name}</b>
+                    <RepoName name={x.name} ids={ids} go={go} className="font-semibold text-parchment" />
                   </td>
                   <td className="py-2 pr-3">
                     <span className={`font-mono text-xs select-text ${x.file ? "text-dim" : "text-blood"}`}>{x.file || "no zip in iCloud"}</span>
                     {x.verdict.reasons.length > 0 && <p className="mt-0.5 text-xs text-dim select-text">{x.verdict.reasons.join(" · ")}</p>}
                   </td>
                   <td className="py-2 pl-3 font-mono text-xs text-faint">{x.version || ""}</td>
-                  <td className="py-1.5 pl-3 text-right">{x.verdict.light !== "green" && <FixSlot id={`zip/${x.name}`} prompt={x.prompt} label="Copy refresh prompt" />}</td>
+                  <td className="py-1.5 pl-3 text-right">{x.verdict.light !== "green" && <span className="text-xs text-faint">yours: bun run package</span>}</td>
                 </tr>
               ))}
             </tbody>

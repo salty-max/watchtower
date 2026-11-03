@@ -1,8 +1,9 @@
 import { Fragment, useState } from "react";
 import { DispatcherBar, FixSlot } from "@/components/FixButton";
+import { NavLink, Rows } from "@/components/Row";
 import { Dot, PageNote } from "@/components/ui";
 import { useApp, type Dict, type Light } from "@/lib/api";
-import { queue } from "@/lib/queue";
+import { addonIds, queue } from "@/lib/queue";
 
 const COLUMNS: [string, string[]][] = [
   ["git", ["git"]],
@@ -21,12 +22,13 @@ const cell = (a: Dict, labels: string[] | "other"): Light => {
 };
 
 /** The push wave: what stands in the way, what waits to go, and every addon's checks as one table to read by column. The order of a wave is the wow-releasing skill's: shown, never decided. */
-export function Releases() {
+export function Releases({ go }: { go: (id: string) => void }) {
   const { state } = useApp();
   const s = state!;
   const r = s.releases;
   const [shown, setShown] = useState<string[]>([]);
   const toggle = (n: string) => setShown((x) => (x.includes(n) ? x.filter((y) => y !== n) : [...x, n]));
+  const ids = addonIds(s);
   const inWay = queue(s).filter((i) => i.page === "releases" && i.light === "red");
   const waiting = (r.repos as Dict[]).filter((p) => p.ahead > 0 && !inWay.some((i) => i.where === p.name));
   const addons = [...(r.addons as Dict[])].sort((a, b) => RANK[a.verdict.light as string] - RANK[b.verdict.light as string]);
@@ -37,33 +39,28 @@ export function Releases() {
     <div>
       <h1 className="title text-[26px] leading-tight text-parchment">Push wave</h1>
       <p className="mt-1.5 text-dim">What stands in the way of a push or a release, and what waits to go. Its order is the wow-releasing skill's.</p>
-      <DispatcherBar page="releases" />
+      <DispatcherBar fixes={[...inWay.map((i) => i.fix), ...(r.addons as Dict[]).map((a) => a.fix), ...(r.repos as Dict[]).map((p) => p.fix)]} />
       <PageNote v={{ light: r.verdict.light === "green" ? "amber" : r.verdict.light, reasons: r.verdict.reasons }} />
 
       <Band title="In the way" tone="text-blood" count={inWay.length} empty={r.verdict.light === "grey" ? "Not read yet." : "Nothing stands in the way of a push."}>
-        {inWay.map((i) => (
-          <li key={i.id} data-row={i.id} className="grid grid-cols-[1.25rem_minmax(0,11rem)_minmax(0,1fr)_auto] items-start gap-x-3 border-t border-edge py-2.5">
-            <Dot light="red" className="mt-[3px]" />
-            <b className="font-semibold text-parchment select-text">{i.where}</b>
-            <p className="text-parchment select-text">{i.what}</p>
-            <FixSlot id={i.id} prompt={i.prompt} fix={i.fix} />
-          </li>
-        ))}
+        <Rows items={inWay} go={go} addons={ids} here="releases" />
       </Band>
 
       <Band title="Unpushed" tone="text-ok" count={waiting.length} empty={repos.length ? `Nothing unpushed. ${repos.length} repositories read.` : "Not read yet."}>
+        <ul className="border-b border-edge">
         {waiting.map((p) => (
           <li key={p.name} data-row={`push/${p.name}`} className="grid grid-cols-[1.25rem_minmax(0,11rem)_minmax(0,1fr)_auto] items-start gap-x-3 border-t border-edge py-2.5">
             <Dot light={p.verdict.light} className="mt-[3px]" />
-            <b className="font-semibold text-parchment select-text">{p.name}</b>
+            {ids.includes(p.name) ? <NavLink to={`addon:${p.name}`} go={go} className="font-semibold text-parchment">{p.name}</NavLink> : <b className="font-semibold text-parchment">{p.name}</b>}
             <p className="text-parchment select-text">
               {p.ahead} unpushed commit{p.ahead === 1 ? "" : "s"}
               {p.cards.length > 0 && <span className="ml-2 font-mono text-xs text-faint">{p.cards.map((c: Dict) => `${c.id} (${c.status})`).join(", ")}</span>}
               {p.verdict.reasons.length > 0 && <span className="ml-2 text-dim">{p.verdict.reasons.join(", ")}</span>}
             </p>
-            <FixSlot id={`push/${p.name}`} prompt={p.prompt} fix={p.fix} label="Copy push prompt" />
+            <FixSlot id={`push/${p.name}`} prompt={p.prompt} fix={p.fix} alone label="Copy push prompt" />
           </li>
         ))}
+        </ul>
       </Band>
 
       <section className="mt-9" aria-label="Addons by check">
@@ -91,6 +88,11 @@ export function Releases() {
                       <button type="button" aria-expanded={shown.includes(a.name)} disabled={!a.rows.length} onClick={() => toggle(a.name)} className="text-left">
                         <b className="font-semibold text-parchment">{a.name}</b> <span className="font-mono text-xs text-faint">{a.tag || "no tag"}</span>
                       </button>
+                      {ids.includes(a.name) && (
+                        <NavLink to={`addon:${a.name}`} go={go} className="ml-2 text-xs text-faint hover:text-parchment">
+                          page
+                        </NavLink>
+                      )}
                     </td>
                     {COLUMNS.map(([n, l]) => (
                       <td key={n} className="px-2 text-center">
@@ -103,7 +105,7 @@ export function Releases() {
                       </td>
                     )}
                     <td className="px-2 text-right font-mono text-xs text-dim">{a.ships || "·"}</td>
-                    <td className="py-1 pl-3 text-right">{(a.prompt || a.verdict.light !== "green") && <FixSlot id={`rel/${a.name}`} prompt={a.prompt} fix={a.fix} label="Copy release prompt" />}</td>
+                    <td className="py-1 pl-3 text-right">{(a.fix || a.prompt) && <FixSlot id={`rel/${a.name}`} prompt={a.prompt} fix={a.fix} alone={!a.fix} label={a.fix ? "Copy prompt" : "Copy release prompt"} />}</td>
                   </tr>
                   {shown.includes(a.name) && (
                     <tr>
@@ -159,7 +161,7 @@ export function Releases() {
                 <tr key={p.name} data-row={`repo/${p.name}`} className="border-t border-edge">
                   <td className="py-1.5 pr-3">
                     <Dot light={p.verdict.light} className="mr-2" />
-                    <b className="font-semibold text-parchment">{p.name}</b> <span className="font-mono text-xs text-faint select-text">{String(p.head).split(" ")[0]}</span>
+                    {ids.includes(p.name) ? <NavLink to={`addon:${p.name}`} go={go} className="font-semibold text-parchment">{p.name}</NavLink> : <b className="font-semibold text-parchment">{p.name}</b>} <span className="font-mono text-xs text-faint select-text">{String(p.head).split(" ")[0]}</span>
                     {p.verdict.reasons.length > 0 && <p className="pl-[19px] text-xs text-dim select-text">{p.verdict.reasons.join(" · ")}</p>}
                   </td>
                   <td className={`px-3 text-right font-mono text-xs ${p.ahead ? "text-amber" : "text-faint"}`}>{p.ahead || "·"}</td>
@@ -169,7 +171,7 @@ export function Releases() {
                     {p.ci ?? (p.verdict.reasons.some((x: string) => /gh gave nothing/.test(x)) ? "unknown" : "none")}
                   </td>
                   <td className="pl-4 font-mono text-xs text-faint select-text">{p.cards.map((c: Dict) => `${c.id} (${c.status})`).join(", ")}</td>
-                  <td className="py-1 pl-3 text-right">{p.verdict.light !== "green" && <FixSlot id={`repo/${p.name}`} prompt={p.prompt} fix={p.fix} label="Copy push prompt" />}</td>
+                  <td className="py-1 pl-3 text-right">{(p.fix || p.ahead > 0) && <FixSlot id={`repo/${p.name}`} prompt={p.prompt} fix={p.fix} alone={!p.fix} label={p.fix ? "Copy prompt" : "Copy push prompt"} />}</td>
                 </tr>
               ))}
             </tbody>
@@ -186,7 +188,7 @@ function Band({ title, tone, count, empty, children }: { title: string; tone: st
       <h2 className="mb-1 text-[11px] font-semibold tracking-[0.12em] uppercase">
         <span className={tone}>{title}</span> <span className="ml-1 font-mono font-normal text-faint">{count}</span>
       </h2>
-      {count ? <ul className="border-b border-edge">{children}</ul> : <p className="text-[13px] text-faint">{empty}</p>}
+      {count ? children : <p className="text-[13px] text-faint">{empty}</p>}
     </section>
   );
 }

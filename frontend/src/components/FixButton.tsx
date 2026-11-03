@@ -26,8 +26,14 @@ export function FixButton({ fix }: { fix: Fix }) {
       </>
     );
   }
-  // (a missing dispatcher is one choice for every row: the bar at the head of the page offers it, so the rows say nothing)
-  if ((fix.state === "refused" || fix.state === "tried") && fix.needsDispatcher) return null;
+  // (a missing dispatcher is one choice for every row: the bar at the head of the page offers it, and until it is made the button waits)
+  if ((fix.state === "refused" || fix.state === "tried") && fix.needsDispatcher) {
+    return (
+      <button type="button" className="btn h-8 border-edge-gold px-3 text-[13px] text-gold" disabled title="Choose a session to report to first">
+        Fix…
+      </button>
+    );
+  }
   if (fix.state === "refused") return <span className={`${quiet} max-w-[16rem] text-right`}>{fix.reason}</span>;
   if (fix.state === "tried") {
     return fix.again ? (
@@ -70,16 +76,16 @@ function Running({ fix }: { fix: Fix }) {
   const word = fix.state === "ready-to-push" ? "fix ready to push" : `fix ${fix.card?.status ?? "starting"}`;
   return (
     <span className="flex flex-wrap items-center justify-end gap-2" data-fix-state={fix.state}>
-      <span className={`rounded border px-2 py-0.5 text-xs ${fix.state === "ready-to-push" ? "border-ok/50 text-ok" : "border-edge text-dim"}`}>
-        {fix.id && <span className="mr-1.5 font-mono select-text">{fix.id}</span>}
+      <span className={`text-xs ${fix.state === "ready-to-push" ? "text-ok" : "text-dim"}`}>
+        {fix.id && <span className="mr-1.5 font-mono text-faint select-text">{fix.id}</span>}
         {word}
       </span>
       {fix.attach && (
         <>
-          <button type="button" className="btn btn-ghost h-7 border-edge px-2 text-xs" disabled={busy} onClick={attach}>
+          <button type="button" className="btn h-8 px-3 text-[13px]" disabled={busy} onClick={attach}>
             Attach
           </button>
-          <button type="button" className="btn btn-ghost h-7 border-edge px-2 text-xs" onClick={() => copy(fix.attach!, "Copied: paste it in Terminal")}>
+          <button type="button" className="btn h-8 px-3 text-[13px]" onClick={() => copy(fix.attach!, "Copied: paste it in Terminal")}>
             Copy attach command
           </button>
         </>
@@ -226,24 +232,24 @@ function FixDialog({ fix, onClose, onStarted }: { fix: Fix; onClose: () => void;
   );
 }
 
-/** The place at the right end of every red or amber row for the "start a fix session" button. `fix` is the server's view of the row's light (server/fix.ts), absent when it is not one a session can fix: then the slot holds the copy-prompt button alone. */
-export function FixSlot({ id, prompt, fix, label = "Copy prompt" }: { id: string; prompt?: string; fix?: Record<string, unknown>; label?: string }) {
+/** The place at the right end of every red or amber row. With a fix a session could start: the Fix button, and Copy prompt beside it as the fallback. Without one: what the user does about it, as plain words (`alone`: a hand-over that is a session's job without being a fix, a push or a release, keeps its Copy button). */
+export function FixSlot({ id, prompt, fix, hint, alone, label = "Copy prompt" }: { id: string; prompt?: string; fix?: Record<string, unknown>; hint?: string; alone?: boolean; label?: string }) {
   const f = fix as Fix | undefined;
   // (a prompt for a fix already under way would start a second one by hand: shown again once it has ended)
   const active = f && (f.state === "running" || f.state === "waiting" || f.state === "ready-to-push");
   return (
     <span data-fix-slot={id} data-fixable={f ? "true" : undefined} data-fix-state={f?.state} className="inline-flex flex-wrap items-center justify-end gap-2">
-      {f && <FixButton fix={f} />}
-      {!active && <CopyButton text={prompt} label={label} />}
+      {f ? <FixButton fix={f} /> : hint && <span className="max-w-[16rem] text-right text-xs text-faint">{hint}</span>}
+      {(f ? !active : alone) && <CopyButton text={prompt} label={label} />}
     </span>
   );
 }
 
 /** The one choice every fix waits on when no dispatcher is chosen: the live session that receives the reports and pushes. Shown at the head of a page whose rows are refused for want of it, in place of the same reason on every row. */
-export function DispatcherBar({ page }: { page?: "releases" | "data" }) {
+export function DispatcherBar({ fixes }: { fixes: (Record<string, unknown> | undefined)[] }) {
   const { state, reload, toast } = useApp();
-  // (on a page, only the fixes of its own rows ask: the overview has them all)
-  const need = (state?.fixes ?? []).some((f) => f.needsDispatcher && (!page || f.page === page));
+  // (only when a row on show has a fix that waits for it: a chooser nothing on the page needs would be a control for nothing)
+  const need = fixes.some((f) => (f as Fix | undefined)?.needsDispatcher);
   if (!need) return null;
   const list = state?.dispatchers ?? [];
   const choose = async (el: HTMLSelectElement) => {
@@ -260,7 +266,7 @@ export function DispatcherBar({ page }: { page?: "releases" | "data" }) {
   };
   return (
     <p data-dispatcher-bar className="mt-4 flex flex-wrap items-center gap-3 border-l-2 border-edge-gold pl-3 text-[13px] text-dim">
-      <span>Fix sessions need a session to report to, the one that pushes what they commit.</span>
+      <span>The Fix buttons below wait for a session to report to, the one that pushes what they commit.</span>
       {list.length === 0 ? (
         <span className="text-faint">Open a session to report to</span>
       ) : (

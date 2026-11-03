@@ -1,5 +1,6 @@
 import { Check, ClipboardCopy, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { NavLink } from "@/components/Row";
 import { Dot, Modal, Reasons, useNow } from "@/components/ui";
 import { call, useApp, type Dict, type Light } from "@/lib/api";
 import { ago, hhmm, when, WORD } from "@/lib/format";
@@ -13,21 +14,21 @@ const VERDICT: Record<Light, [string, string, string]> = {
 const STATUSES = ["waiting-test", "waiting-review", "ready-to-push", "done"];
 
 /** Launch night: the nine addons' readiness and the in-game checks, the night's timeline, the systems, the notes and the open questions. One page with the others, its ticks and notes in ~/.cache/watchtower/launch-night.json. */
-export function Launch() {
+export function Launch({ go }: { go: (id: string) => void }) {
   const { state, refreshAll, toast } = useApp();
   const L = state!.launch as Dict;
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-9">
       <Band L={L} onRefresh={refreshAll} />
-      <div className="grid grid-cols-1 gap-x-9 gap-y-8 lg:grid-cols-[minmax(0,1fr)_21rem]">
-        <Addons L={L} />
-        <div className="flex min-w-0 flex-col gap-7">
-          <Timeline L={L} />
-          <Systems L={L} toast={toast} />
-          <Notes L={L} />
-          <Questions L={L} />
-          <ForeverData L={L} />
-        </div>
+      <Timeline L={L} />
+      <Addons L={L} go={go} />
+      <div className="grid grid-cols-1 gap-x-10 gap-y-9 lg:grid-cols-2">
+        <Systems L={L} toast={toast} />
+        <ForeverData L={L} />
+      </div>
+      <div className="grid grid-cols-1 gap-x-10 gap-y-9 lg:grid-cols-2">
+        <Notes L={L} />
+        <Questions L={L} />
       </div>
     </div>
   );
@@ -101,7 +102,7 @@ function Band({ L, onRefresh }: { L: Dict; onRefresh: () => void }) {
 }
 
 /** The nine addons in the checklist's order, each folded to one line (readiness, version, CI, zip, in-game count): the first that is not green starts open. */
-function Addons({ L }: { L: Dict }) {
+function Addons({ L, go }: { L: Dict; go: (id: string) => void }) {
   // (until the user opens or closes a row, the open one follows the readings: the first that is not green)
   const [touched, setTouched] = useState<string[]>();
   const open = touched ?? (L.addons as Dict[]).filter((a) => a.light !== "green").slice(0, 1).map((a) => a.id);
@@ -117,14 +118,14 @@ function Addons({ L }: { L: Dict }) {
       </h2>
       <ol className="border-b border-edge">
         {(L.addons as Dict[]).map((a) => (
-          <AddonRow key={a.id} a={a} shown={open.includes(a.id)} toggle={() => setOpen(open.includes(a.id) ? open.filter((y) => y !== a.id) : [...open, a.id])} />
+          <AddonRow key={a.id} a={a} go={go} shown={open.includes(a.id)} toggle={() => setOpen(open.includes(a.id) ? open.filter((y) => y !== a.id) : [...open, a.id])} />
         ))}
       </ol>
     </section>
   );
 }
 
-function AddonRow({ a, shown, toggle }: { a: Dict; shown: boolean; toggle: () => void }) {
+function AddonRow({ a, go, shown, toggle }: { a: Dict; go: (id: string) => void; shown: boolean; toggle: () => void }) {
   const { change, copy } = useApp();
   const done = a.checks.filter((c: Dict) => c.tick === "ok").length;
   const game = a.inGame.light === "grey" ? "not tested" : a.inGame.light === "red" ? "broken" : `${done}/${a.checks.length} ok`;
@@ -132,18 +133,27 @@ function AddonRow({ a, shown, toggle }: { a: Dict; shown: boolean; toggle: () =>
   const zip = a.zip && (a.zip.mark === "✓" ? ["zip current", "text-faint"] : /^none/.test(a.zip.text) ? ["no zip", "text-blood"] : ["zip behind", "text-amber"]);
   return (
     <li id={`card-${a.id}`} className="border-t border-edge">
-      <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-0.5 py-2.5">
-        <button type="button" aria-expanded={shown} aria-controls={`body-${a.id}`} onClick={toggle} className="flex min-w-[13rem] items-center gap-4 text-left">
-          <span className="w-4 text-right font-mono text-xs text-faint">{a.rank}</span>
+      <div className="grid grid-cols-[1.5rem_minmax(0,1fr)_5.5rem_8rem] items-center gap-x-4 gap-y-0.5 py-2.5 lg:grid-cols-[1.5rem_minmax(0,1fr)_5.5rem_4.5rem_3.5rem_6rem_8rem]">
+        <button type="button" aria-expanded={shown} aria-controls={`body-${a.id}`} aria-label={`${shown ? "Close" : "Open"} ${a.name}'s checks`} onClick={toggle} className="flex items-center gap-1.5 text-left">
+          <span className="w-2 text-right font-mono text-xs text-faint">{a.rank}</span>
           <Dot light={a.light} />
-          <span className="font-semibold text-parchment">{a.name}</span>
         </button>
-        <span className="font-mono text-xs text-faint select-text">{a.slash}</span>
+        <div className="flex min-w-0 items-baseline gap-2">
+          <NavLink to={`addon:${a.id}`} go={go} className="truncate font-semibold text-parchment">
+            {a.name}
+          </NavLink>
+          <span className="font-mono text-xs text-faint select-text">{a.slash}</span>
+        </div>
         <span className={`text-[13px] ${tone(a.readiness.light)}`}>{WORD[a.readiness.light as Light]}</span>
-        {a.version && <span className="font-mono text-xs text-faint select-text">v{a.version}</span>}
-        {a.ci && <span className={`text-xs ${a.ci === "success" ? "text-faint" : "text-blood"}`}>CI {a.ci === "success" ? "✓" : a.ci}</span>}
-        {zip && <span className={`text-xs ${zip[1]}`} title={a.zip.text}>{zip[0]}</span>}
-        <span className={`ml-auto text-xs ${a.inGame.light === "grey" ? "text-faint" : tone(a.inGame.light)}`}>in game: {game}</span>
+        <span className="font-mono text-xs text-faint select-text max-lg:hidden">{a.version && `v${a.version}`}</span>
+        <span className={`text-xs max-lg:hidden ${a.ci === "success" ? "text-faint" : "text-blood"}`}>{a.ci && `CI ${a.ci === "success" ? "✓" : a.ci}`}</span>
+        <span className={`text-xs max-lg:hidden ${zip ? zip[1] : ""}`} title={a.zip?.text}>{zip?.[0]}</span>
+        <span className={`text-right text-xs ${a.inGame.light === "grey" ? "text-faint" : tone(a.inGame.light)}`}>in game: {game}</span>
+        <p className="col-start-2 col-end-5 flex gap-4 text-xs text-faint lg:hidden">
+          {a.version && <span className="font-mono">v{a.version}</span>}
+          {a.ci && <span className={a.ci === "success" ? "" : "text-blood"}>CI {a.ci === "success" ? "✓" : a.ci}</span>}
+          {zip && <span className={zip[1]}>{zip[0]}</span>}
+        </p>
       </div>
       {shown && (
         <div id={`body-${a.id}`} className="pb-4 pl-8">
@@ -228,26 +238,35 @@ function tMark(at: string, launch: string): string {
   return `T${m < 0 ? "−" : "+"}${[d && `${d}d`, h && `${h}h`, r && `${r}m`].filter(Boolean).join(" ")}`;
 }
 
+/** The night's steps: the next four that are not done, and every step behind one button (a long list would push the addons off the page). */
 function Timeline({ L }: { L: Dict }) {
   const { change } = useApp();
+  const [all, setAll] = useState(false);
+  const steps: Dict[] = L.timeline;
+  const shown = all ? steps : steps.filter((t) => !t.done).slice(0, 4);
   return (
-    <Box title="Timeline">
-      <ol className="flex flex-col gap-3">
-        {L.timeline.map((t: Dict) => (
-          <li key={t.id} className={`flex gap-3 ${t.done ? "opacity-50" : t.past && !t.next ? "opacity-80" : ""}`}>
+    <Box title={`Timeline, ${steps.filter((t) => t.done).length} of ${steps.length} done`}>
+      <ol>
+        {shown.map((t: Dict) => (
+          <li key={t.id} className={`grid grid-cols-[1.25rem_8.5rem_minmax(0,1fr)] items-start gap-x-3 border-t border-edge py-2.5 ${t.done ? "opacity-50" : t.past && !t.next ? "opacity-80" : ""} ${t.next ? "border-l-2 border-l-gold pl-3" : ""}`}>
             <input type="checkbox" className="mt-1 size-4 shrink-0 accent-[#c9a227]" checked={t.done} onChange={(e) => change({ op: "step", id: t.id, done: e.target.checked })} aria-label={t.title} />
+            <p className={`pt-px text-xs ${t.next ? "text-gold" : "text-faint"}`}>
+              <span className="mr-2 font-mono">{tMark(t.at, L.launch)}</span>
+              {when(t.at)}
+              {t.next && <span className="block">next</span>}
+            </p>
             <div className="min-w-0">
-              <p className={`text-xs ${t.next ? "text-gold" : "text-faint"}`}>
-                <span className="mr-2 font-mono">{tMark(t.at, L.launch)}</span>
-                {when(t.at)}
-                {t.next ? " · next" : ""}
-              </p>
               <p className={`font-medium text-parchment ${t.done ? "line-through" : ""}`}>{t.title}</p>
               <p className="text-[13px] text-dim select-text">{t.detail}</p>
             </div>
           </li>
         ))}
       </ol>
+      {steps.length > shown.length || all ? (
+        <button type="button" className="btn mt-2 h-8 px-3 text-[13px]" aria-expanded={all} onClick={() => setAll(!all)}>
+          {all ? "Only the next steps" : `All ${steps.length} steps`}
+        </button>
+      ) : null}
     </Box>
   );
 }

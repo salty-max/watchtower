@@ -77,4 +77,36 @@ describe("what the dedupes must not hide", () => {
     const s = base({ stores: { stores: [{ repo: "goodwill", read: false, why: "not-on-curseforge", verdict: { light: "grey", reasons: ["not on CurseForge"] } }], verdict: { light: "grey", reasons: [] } } });
     expect(queue(s)).toHaveLength(0);
   });
+  test("a tool that is not one of the addons never counts in 'N of M addons'", () => {
+    const rows = (n: string) => ({ name: n, rows: [{ mark: "!", label: "review", text: "none recorded" }], verdict: { light: "amber", reasons: [] } });
+    const s = base({ launch: { build: { reasons: [] }, infra: { reasons: [] }, sources: { reasons: [] }, addons: [{ id: "a", inGame: { light: "green" }, checks: [] }, { id: "b", inGame: { light: "green" }, checks: [] }, { id: "c", inGame: { light: "green" }, checks: [] }] }, releases: { addons: [rows("a"), rows("b"), rows("c"), rows("wow-locker")], repos: [], verdict: { light: "amber", reasons: [] } } });
+    const items = queue(s);
+    const shared = items.find((i) => i.names);
+    expect(shared?.where).toBe("3 of 3 addons");
+    expect(shared?.names).toEqual(["a", "b", "c"]);
+    expect(items.some((i) => i.where === "wow-locker")).toBe(true);
+  });
+  test("a light no session can fix keeps what to do about it and no prompt to copy; a fixable one keeps its prompt", () => {
+    const s = base({ releases: { addons: [{ name: "x", rows: [{ mark: "!", label: "CI", text: "last run not on HEAD" }], verdict: { light: "amber", reasons: [] }, prompt: "p" }], repos: [{ name: "y", ahead: 0, behind: 0, dirty: 0, verdict: { light: "red", reasons: ["CI failure"] }, fix: { key: "y/ci/CI", state: "offered" }, prompt: "fix y" }], verdict: { light: "red", reasons: [] } } });
+    const items = queue(s);
+    const x = items.find((i) => i.where === "x")!;
+    expect(x.prompt).toBeUndefined();
+    expect(x.hint).toBeTruthy();
+    const y = items.find((i) => i.where === "y")!;
+    expect(y.prompt).toBe("fix y");
+    expect(y.hint).toBeUndefined();
+  });
+  test("an addon whose only stop is CI, with no release fix, still gets the repository's CI fix and prompt", () => {
+    const fix = { key: "keyring/ci/CI", state: "offered" };
+    const s = base({ releases: { addons: [{ name: "keyring", rows: [{ mark: "✗", label: "CI", text: "failure on HEAD" }], verdict: { light: "red", reasons: [] }, prompt: "p" }], repos: [{ name: "keyring", ahead: 0, behind: 0, dirty: 0, verdict: { light: "red", reasons: ["CI failure"] }, fix, prompt: "fix the CI" }], verdict: { light: "red", reasons: [] } } });
+    const row = queue(s).find((i) => i.where === "keyring")!;
+    expect(row.fix).toEqual(fix);
+    expect(row.prompt).toBe("fix the CI");
+    expect(row.hint).toBeUndefined();
+  });
+  test("a tool that errors gets its source fix on the reading's row", () => {
+    const fix = { key: "addon-kit/source/status", kind: "source", page: "releases", state: "offered" };
+    const s = base({ fixes: [fix], releases: { addons: [], repos: [], verdict: { light: "amber", reasons: ["status failed, showing its last answer: boom"] } } });
+    expect(queue(s)[0].fix).toEqual(fix);
+  });
 });

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { FixSlot } from "@/components/FixButton";
+import { RepoName } from "@/components/Row";
 import { Dot, Modal, PageNote } from "@/components/ui";
 import { call, useApp, type Dict, type Light } from "@/lib/api";
+import { addonIds } from "@/lib/queue";
 
 const RANK: Record<string, number> = { red: 0, amber: 1, grey: 2, green: 3 };
 const STORES = ["CurseForge", "Wago", "GitHub", "CF summary"] as const;
@@ -20,8 +21,9 @@ function cells(x: Dict): { light: Light; word?: string }[] {
 }
 
 /** Stores: each addon's pages on CurseForge, Wago and GitHub against its CURSEFORGE.md, as a matrix. The dry run changes nothing: putting a page up stays with a session and the user's go. */
-export function Stores() {
+export function Stores({ go }: { go: (id: string) => void }) {
   const { state, toast } = useApp();
+  const ids = addonIds(state!);
   const s = state!.stores;
   const [run, setRun] = useState<{ repo: string; out?: string }>();
   const dry = async (repo: string) => {
@@ -62,7 +64,7 @@ export function Stores() {
                 return (
                   <tr key={x.repo} data-row={`store/${x.repo}`} className="border-t border-edge align-top">
                     <td className="py-2 pr-3">
-                      <b className="font-semibold text-parchment">{x.repo}</b>
+                      <RepoName name={x.repo} ids={ids} go={go} className="font-semibold text-parchment" />
                       {x.verdict.reasons.length > 0 && <p className="mt-0.5 text-xs text-dim select-text">{x.verdict.reasons.join(" · ")}</p>}
                     </td>
                     {c.map((k, n) => (
@@ -77,7 +79,7 @@ export function Stores() {
                           Dry run
                         </button>
                       )}
-                      {x.verdict.light !== "green" && <FixSlot id={`store/${x.repo}`} prompt={x.prompt} label="Copy store prompt" />}
+                      {x.due?.length > 0 && <span className="text-xs text-faint">goes up on your go</span>}
                     </td>
                   </tr>
                 );

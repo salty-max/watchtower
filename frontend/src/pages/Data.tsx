@@ -1,8 +1,10 @@
 import { ExternalLink } from "lucide-react";
 import { DispatcherBar, FixSlot } from "@/components/FixButton";
+import { RepoName } from "@/components/Row";
 import { Dot, PageNote } from "@/components/ui";
 import { useApp, type Dict } from "@/lib/api";
 import { ago } from "@/lib/format";
+import { addonIds } from "@/lib/queue";
 
 const KIND_ORDER: Record<string, number> = { players: 0, pins: 1, "game-data": 2, other: 3 };
 const KIND_NAME: Record<string, string> = { players: "Players", pins: "Pins", "game-data": "Game data", other: "Other" };
@@ -12,8 +14,9 @@ const RANK: Record<string, number> = { red: 0, amber: 1, grey: 2, green: 3 };
 const own = (p: Dict) => (p.verdict.reasons as string[]).map((r) => r.replace(`${p.repo} #${p.number} ${p.title}: `, "")).join(" · ");
 
 /** Data: the pull requests the daily jobs opened as a review queue, then the jobs themselves, then the game's builds against the pins. */
-export function Data() {
+export function Data({ go }: { go: (id: string) => void }) {
   const { state, open } = useApp();
+  const ids = addonIds(state!);
   const d = state!.data;
   const prs = [...(d.prs as Dict[])].sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || RANK[a.verdict.light] - RANK[b.verdict.light] || a.number - b.number);
   const jobs = [...(d.jobs as Dict[])].sort((a, b) => RANK[a.verdict.light] - RANK[b.verdict.light]);
@@ -27,7 +30,7 @@ export function Data() {
     <div>
       <h1 className="title text-[26px] leading-tight text-parchment">Data</h1>
       <p className="mt-1.5 text-dim">The pull requests the daily jobs opened, and the jobs. A Players pull request is strangers' data: read before merging, never merged by itself.</p>
-      <DispatcherBar page="data" />
+      <DispatcherBar fixes={[...prs.map((p) => p.fix), ...jobs.map((j) => j.fix)]} />
       <PageNote v={top} />
 
       <section className="mt-7" aria-label="Review queue">
@@ -44,7 +47,7 @@ export function Data() {
                 <span className={`pt-px text-[11px] font-semibold tracking-[0.1em] uppercase ${p.kind === "players" ? "text-amber" : "text-faint"}`}>{KIND_NAME[p.kind] ?? p.kind}</span>
                 <div className="min-w-0">
                   <p className="text-parchment select-text">
-                    <b className="font-semibold">{p.repo}</b> <span className="font-mono text-xs text-faint">#{p.number}</span> <span className="text-dim">{p.title}</span>
+                    <RepoName name={p.repo} ids={ids} go={go} className="font-semibold" /> <span className="font-mono text-xs text-faint">#{p.number}</span> <span className="text-dim">{p.title}</span>
                   </p>
                   <p className="mt-0.5 text-[13px] text-dim select-text">
                     {p.kind === "players" ? "Read it line by line against the databases before the go. " : ""}
@@ -59,7 +62,7 @@ export function Data() {
                       <ExternalLink className="size-3.5" />
                     </button>
                   )}
-                  {p.verdict.light !== "green" && <FixSlot id={`pr/${p.repo}/${p.number}`} prompt={p.prompt} fix={p.fix} />}
+                  {p.verdict.light !== "green" && <FixSlot id={`pr/${p.repo}/${p.number}`} prompt={p.prompt} fix={p.fix} hint={p.kind === "players" ? "yours: read it, then merge on your go" : "wait for its checks, then your go"} />}
                 </div>
               </li>
             ))}
@@ -81,7 +84,7 @@ export function Data() {
                   <li key={`${j.repo}:${j.workflow}`} data-row={`job/${j.repo}/${j.workflow}`} className={`border-l-2 pl-3 ${j.verdict.light === "red" ? "border-blood" : "border-amber"}`}>
                     <p className="flex items-center gap-2">
                       <Dot light={j.verdict.light} />
-                      <b className="font-semibold text-parchment">{j.repo}</b>
+                      <RepoName name={j.repo} ids={ids} go={go} className="font-semibold text-parchment" />
                       <span className="text-xs text-faint">{j.label}</span>
                     </p>
                     <p className={`mt-0.5 pl-[19px] text-[13px] select-text ${j.verdict.light === "red" ? "text-blood" : "text-dim"}`}>{j.text}</p>
@@ -91,7 +94,7 @@ export function Data() {
                           the run →
                         </button>
                       )}
-                      <FixSlot id={`job/${j.repo}/${j.workflow}`} fix={j.fix} />
+                      <FixSlot id={`job/${j.repo}/${j.workflow}`} fix={j.fix} hint="yours: look at the run" />
                     </p>
                   </li>
                 ))}
@@ -102,7 +105,7 @@ export function Data() {
                 {quiet.map((j) => (
                   <li key={`${j.repo}:${j.workflow}`} data-row={`job/${j.repo}/${j.workflow}`} className="flex items-center gap-2 border-t border-edge py-1.5">
                     <Dot light="green" />
-                    <span className="text-dim">{j.repo}</span>
+                    <RepoName name={j.repo} ids={ids} go={go} className="text-dim hover:text-parchment" />
                     <span className="text-xs text-faint">{j.label}</span>
                     <span className="ml-auto font-mono text-xs text-faint">{j.text}</span>
                     {/^https:\/\//.test(j.run?.url ?? "") && (

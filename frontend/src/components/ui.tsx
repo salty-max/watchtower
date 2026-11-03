@@ -41,7 +41,7 @@ export function CopyButton({ text, label = "Copy prompt" }: { text?: string; lab
   const { copy } = useApp();
   if (!text) return null;
   return (
-    <button type="button" className="btn btn-ghost h-8 border-edge px-2.5 text-[13px]" onClick={() => copy(text, "Copied: paste it in a session")}>
+    <button type="button" className="btn h-8 px-3 text-[13px]" onClick={() => copy(text, "Copied: paste it in a session")}>
       <Copy className="size-3.5" aria-hidden />
       {label}
     </button>
