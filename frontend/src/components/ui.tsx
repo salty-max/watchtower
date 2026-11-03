@@ -1,35 +1,65 @@
 import { CheckCircle2, Copy, X, XCircle } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useApp, type Light, type Verdict } from "@/lib/api";
-import { WORD } from "@/lib/format";
 
-/** A light's mark: its shape says what its colour says. */
+/** A light: a plain dot. The words next to it say what it means. */
 export function Dot({ light, className = "" }: { light: Light; className?: string }) {
-  return <span role="img" aria-label={WORD[light]} title={WORD[light]} className={`mark mark-${light} ${className}`} />;
+  const bg = { green: "bg-ok", amber: "bg-gold", red: "bg-blood", grey: "bg-faint" }[light];
+  return <span aria-hidden className={`inline-block size-2.5 shrink-0 rounded-full ${bg} ${className}`} />;
+}
+
+/** An on/off switch (role switch): what a checkbox is, in a window. Ravenpost's own. */
+export function Switch({ on, onChange, label, disabled }: { on: boolean; onChange: (on: boolean) => void; label: string; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={() => onChange(!on)}
+      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors disabled:opacity-40 ${on ? "border-gold-soft bg-gold-soft/80" : "border-edge bg-stone-3"}`}
+    >
+      <span className={`inline-block size-3.5 rounded-full shadow transition-transform ${on ? "translate-x-[18px] bg-night" : "translate-x-[3px] bg-dim"}`} />
+    </button>
+  );
+}
+
+/** A page's title and what it is for. Ravenpost's own. */
+export function PageHeader({ title, intro, action }: { title: string; intro?: string; action?: ReactNode }) {
+  return (
+    <header className="flex items-start justify-between gap-6">
+      <div className="min-w-0">
+        <h1 className="title text-2xl">{title}</h1>
+        {intro && <p className="mt-1.5 max-w-2xl text-dim">{intro}</p>}
+      </div>
+      {action}
+    </header>
+  );
+}
+
+/** A panel with a title, and rows inside. */
+export function Panel({ title, note, action, children }: { title: string; note?: string; action?: ReactNode; children: ReactNode }) {
+  return (
+    <section className="panel p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="title text-lg">{title}</h2>
+          {note && <p className="mt-0.5 max-w-2xl text-sm text-dim">{note}</p>}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
 }
 
 /** Why a light is what it is. */
 export function Reasons({ v }: { v: Verdict }) {
   if (!v.reasons.length) return null;
-  const tone = v.light === "red" ? "text-blood" : "text-dim";
   return (
-    <ul className={`mt-2.5 flex flex-col gap-1 text-[13px] select-text ${tone}`}>
-      {v.reasons.map((r, i) => (
-        <li key={i} className="flex gap-2">
-          <span aria-hidden className="mt-[7px] size-1 shrink-0 rounded-full bg-current opacity-60" />
-          <span>{r}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/** What a page could not read or read late (a failed or cached source, a source that has not answered): a flat line under the page's intro, so old numbers are never taken for new ones. */
-export function PageNote({ v }: { v: Verdict }) {
-  if (!v.reasons.length) return null;
-  const edge = { green: "border-edge", amber: "border-amber", red: "border-blood", grey: "border-faint" }[v.light];
-  return (
-    <ul className={`mt-4 flex flex-col gap-0.5 border-l-2 pl-3 text-[13px] text-dim select-text ${edge}`}>
+    <ul className={`mt-2 flex flex-col gap-1 text-sm select-text ${v.light === "red" ? "text-blood" : "text-dim"}`}>
       {v.reasons.map((r, i) => (
         <li key={i}>{r}</li>
       ))}
@@ -41,7 +71,7 @@ export function CopyButton({ text, label = "Copy prompt" }: { text?: string; lab
   const { copy } = useApp();
   if (!text) return null;
   return (
-    <button type="button" className="btn h-8 px-3 text-[13px]" onClick={() => copy(text, "Copied: paste it in a session")}>
+    <button type="button" className="btn h-8 px-3 text-[13px]" onClick={() => copy(text, "Copied. Paste it in a session.")}>
       <Copy className="size-3.5" aria-hidden />
       {label}
     </button>
@@ -86,6 +116,7 @@ export function Modal({ title, onClose, locked, children }: { title: string; onC
   );
 }
 
+/** The toasts, bottom right: what was copied, what went wrong. Ravenpost's own. */
 export function Toasts() {
   const { toasts } = useApp();
   return (
@@ -100,7 +131,7 @@ export function Toasts() {
   );
 }
 
-/** Now, every `every` ms: for "2 minutes ago" and the clock to stay true. */
+/** Now, every 30 s: for "2 minutes ago" to stay true. */
 export function useNow(every = 30_000): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

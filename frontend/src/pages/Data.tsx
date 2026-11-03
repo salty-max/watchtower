@@ -1,153 +1,115 @@
 import { ExternalLink } from "lucide-react";
 import { DispatcherBar, FixSlot } from "@/components/FixButton";
-import { RepoName } from "@/components/Row";
-import { Dot, PageNote } from "@/components/ui";
-import { useApp, type Dict } from "@/lib/api";
+import { NavLink } from "@/components/Row";
+import { Dot, PageHeader, Panel } from "@/components/ui";
+import { useApp, type Dict, type Light } from "@/lib/api";
 import { ago } from "@/lib/format";
-import { addonIds } from "@/lib/queue";
+import { addonIds, nameOf, queue } from "@/lib/queue";
 
-const KIND_ORDER: Record<string, number> = { players: 0, pins: 1, "game-data": 2, other: 3 };
-const KIND_NAME: Record<string, string> = { players: "Players", pins: "Pins", "game-data": "Game data", other: "Other" };
 const RANK: Record<string, number> = { red: 0, amber: 1, grey: 2, green: 3 };
+const KIND: Record<string, number> = { players: 0, pins: 1, "game-data": 2, other: 3 };
 
-/** A reason in the rules' words begins with the pull request's own name and title, which the row already shows. */
-const own = (p: Dict) => (p.verdict.reasons as string[]).map((r) => r.replace(`${p.repo} #${p.number} ${p.title}: `, "")).join(" · ");
-
-/** Data: the pull requests the daily jobs opened as a review queue, then the jobs themselves, then the game's builds against the pins. */
+/** Data: the pull requests the daily jobs opened, then the jobs, then the game's builds against the pins. */
 export function Data({ go }: { go: (id: string) => void }) {
   const { state, open } = useApp();
-  const ids = addonIds(state!);
-  const d = state!.data;
-  const prs = [...(d.prs as Dict[])].sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || RANK[a.verdict.light] - RANK[b.verdict.light] || a.number - b.number);
+  const s = state!;
+  const d = s.data;
+  const ids = addonIds(s);
+  const items = queue(s);
+  const said = (id: string) => items.find((i) => i.id === id);
+  const prs = [...(d.prs as Dict[])].sort((a, b) => KIND[a.kind] - KIND[b.kind] || RANK[a.verdict.light] - RANK[b.verdict.light]);
   const jobs = [...(d.jobs as Dict[])].sort((a, b) => RANK[a.verdict.light] - RANK[b.verdict.light]);
-  const b = d.builds;
-  // (what the rows below already say is not said twice on top)
-  const said = [...b.reasons, ...prs.flatMap((p) => p.verdict.reasons), ...jobs.flatMap((j) => j.verdict.reasons)];
-  const top = { light: d.verdict.light, reasons: (d.verdict.reasons as string[]).filter((x) => !said.includes(x)) };
-  const loud = jobs.filter((j) => j.verdict.light !== "green");
-  const quiet = jobs.filter((j) => j.verdict.light === "green");
+  // (launch night says Forever's build: it is said here too, so this panel never calls the builds fine over it)
+  const forever = (s.launch?.build?.reasons ?? []) as string[];
+  const builds = [...items.filter((i) => i.id.startsWith("build/") || i.id.startsWith("read/") || i.id.startsWith("err/")), ...forever.map((r, n) => ({ id: `forever/${n}`, light: (s.launch?.build?.light ?? "amber") as Light, who: "", what: r, fix: undefined as Dict | undefined }))];
+  const who = (repo: string) =>
+    ids.includes(repo) ? (
+      <NavLink to={`addon:${repo}`} go={go} className="font-semibold">
+        {nameOf(s, repo)}
+      </NavLink>
+    ) : (
+      <b className="font-semibold">{repo}</b>
+    );
   return (
-    <div>
-      <h1 className="title text-[26px] leading-tight text-parchment">Data</h1>
-      <p className="mt-1.5 text-dim">The pull requests the daily jobs opened, and the jobs. A Players pull request is strangers' data: read before merging, never merged by itself.</p>
+    <div className="flex flex-col gap-5">
+      <PageHeader title="Data" intro="The game data the addons are built from is refreshed by daily jobs, which open pull requests when something changes." />
       <DispatcherBar fixes={[...prs.map((p) => p.fix), ...jobs.map((j) => j.fix)]} />
-      <PageNote v={top} />
-
-      <section className="mt-7" aria-label="Review queue">
-        <h2 className="mb-1 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">
-          Review queue <span className="ml-1 font-mono font-normal">{prs.length}</span>
-        </h2>
+      <Panel title="Pull requests" note="A Players pull request holds strangers' facts. Read it before it is merged: it is never merged by itself.">
         {prs.length === 0 ? (
-          <p className="text-[13px] text-faint">{d.verdict.light === "grey" ? "Not read yet." : "No pull request is open."}</p>
+          <p className="mt-3 text-sm text-dim">{d.verdict.light === "grey" ? "Watchtower has not read them yet." : "No pull request is open."}</p>
         ) : (
-          <ul className="border-b border-edge">
-            {prs.map((p) => (
-              <li key={`${p.repo}#${p.number}`} data-row={`pr/${p.repo}/${p.number}`} className="grid grid-cols-[1.25rem_5.5rem_minmax(0,1fr)_auto] items-start gap-x-3 border-t border-edge py-2.5">
-                <Dot light={p.verdict.light} className="mt-[3px]" />
-                <span className={`pt-px text-[11px] font-semibold tracking-[0.1em] uppercase ${p.kind === "players" ? "text-amber" : "text-faint"}`}>{KIND_NAME[p.kind] ?? p.kind}</span>
-                <div className="min-w-0">
-                  <p className="text-parchment select-text">
-                    <RepoName name={p.repo} ids={ids} go={go} className="font-semibold" /> <span className="font-mono text-xs text-faint">#{p.number}</span> <span className="text-dim">{p.title}</span>
+          <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+            {prs.map((p) => {
+              const item = said(`pr/${p.repo}/${p.number}`);
+              return (
+                <li key={`${p.repo}#${p.number}`} className="flex items-start gap-3 py-2.5">
+                  <Dot light={p.verdict.light} className="mt-[7px]" />
+                  <p className="min-w-0 flex-1 text-parchment select-text">
+                    {who(p.repo)} {item ? item.what : `has pull request #${p.number} (${p.title}). It will merge by itself when its checks pass.`}
+                    {p.createdAt && <span className="ml-2 text-sm text-faint">Opened {ago(Date.parse(p.createdAt), s.now)}.</span>}
                   </p>
-                  <p className="mt-0.5 text-[13px] text-dim select-text">
-                    {p.kind === "players" ? "Read it line by line against the databases before the go. " : ""}
-                    {own(p) || p.next}
-                    {p.createdAt && <span className="ml-2 font-mono text-xs text-faint">opened {ago(Date.parse(p.createdAt), state!.now)}</span>}
-                  </p>
-                  <Diff p={p} />
-                </div>
-                <div className="flex items-center gap-2">
-                  {/^https:\/\//.test(p.url ?? "") && (
-                    <button type="button" className="rounded p-1 text-faint hover:text-parchment" aria-label="Open the pull request" onClick={() => open(p.url)}>
-                      <ExternalLink className="size-3.5" />
-                    </button>
-                  )}
-                  {p.verdict.light !== "green" && <FixSlot id={`pr/${p.repo}/${p.number}`} prompt={p.prompt} fix={p.fix} hint={p.kind === "players" ? "yours: read it, then merge on your go" : "wait for its checks, then your go"} />}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="mt-9" aria-label="Daily jobs">
-        <h2 className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">
-          Daily jobs <span className="ml-1 font-mono font-normal">{jobs.length}</span>
-        </h2>
-        {jobs.length === 0 ? (
-          <p className="text-[13px] text-dim">Not read yet.</p>
-        ) : (
-          <>
-            {loud.length > 0 && (
-              <ul className="grid grid-cols-1 gap-x-6 gap-y-2.5 sm:grid-cols-2">
-                {loud.map((j) => (
-                  <li key={`${j.repo}:${j.workflow}`} data-row={`job/${j.repo}/${j.workflow}`} className={`border-l-2 pl-3 ${j.verdict.light === "red" ? "border-blood" : "border-amber"}`}>
-                    <p className="flex items-center gap-2">
-                      <Dot light={j.verdict.light} />
-                      <RepoName name={j.repo} ids={ids} go={go} className="font-semibold text-parchment" />
-                      <span className="text-xs text-faint">{j.label}</span>
-                    </p>
-                    <p className={`mt-0.5 pl-[19px] text-[13px] select-text ${j.verdict.light === "red" ? "text-blood" : "text-dim"}`}>{j.text}</p>
-                    <p className="mt-1.5 flex items-center gap-2 pl-[19px]">
-                      {/^https:\/\//.test(j.run?.url ?? "") && (
-                        <button type="button" className="rounded px-1 py-0.5 font-mono text-xs text-faint hover:text-parchment" onClick={() => open(j.run.url)}>
-                          the run →
-                        </button>
-                      )}
-                      <FixSlot id={`job/${j.repo}/${j.workflow}`} fix={j.fix} hint="yours: look at the run" />
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {quiet.length > 0 && (
-              <ul className={`grid grid-cols-1 gap-x-6 text-[13px] sm:grid-cols-2 ${loud.length ? "mt-4" : ""}`}>
-                {quiet.map((j) => (
-                  <li key={`${j.repo}:${j.workflow}`} data-row={`job/${j.repo}/${j.workflow}`} className="flex items-center gap-2 border-t border-edge py-1.5">
-                    <Dot light="green" />
-                    <RepoName name={j.repo} ids={ids} go={go} className="text-dim hover:text-parchment" />
-                    <span className="text-xs text-faint">{j.label}</span>
-                    <span className="ml-auto font-mono text-xs text-faint">{j.text}</span>
-                    {/^https:\/\//.test(j.run?.url ?? "") && (
-                      <button type="button" className="rounded p-0.5 text-faint hover:text-parchment" aria-label={`Open the ${j.repo} run`} onClick={() => open(j.run.url)}>
-                        <ExternalLink className="size-3" />
+                  <div className="flex shrink-0 items-center gap-2">
+                    {/^https:\/\//.test(p.url ?? "") && (
+                      <button type="button" className="rounded p-1 text-faint hover:text-parchment" aria-label="Open the pull request on GitHub" onClick={() => open(p.url)}>
+                        <ExternalLink className="size-4" />
                       </button>
                     )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
+                    <FixSlot id={`pr/${p.repo}/${p.number}`} prompt={p.fix ? p.prompt : undefined} fix={p.fix} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </section>
+      </Panel>
 
-      <p className="mt-9 flex items-start gap-2.5 border-t border-edge pt-3.5 text-[13px]">
-        <Dot light={b.light} className="mt-1" />
-        <span className={b.light === "green" ? "text-faint" : "text-dim select-text"}>{b.reasons.length ? b.reasons.join(" · ") : "Classic and Forever are on the pinned builds."}</span>
-      </p>
-      {(d.errors as Dict[]).map((e, n) => (
-        <p key={n} className="mt-2 flex items-start gap-2.5 text-[13px] text-dim select-text">
-          <Dot light="grey" className="mt-1" />
-          {e.repo}: {e.error}
-        </p>
-      ))}
+      <Panel title="Daily jobs">
+        {jobs.length === 0 ? (
+          <p className="mt-3 text-sm text-dim">Watchtower has not read them yet.</p>
+        ) : (
+          <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+            {jobs.map((j) => {
+              const light = j.verdict.light as Light;
+              return (
+                <li key={`${j.repo}:${j.workflow}`} className="flex items-center gap-3 py-2">
+                  <Dot light={light} />
+                  <span className="min-w-0 flex-1 text-parchment">
+                    {who(j.repo)} <span className="text-dim">{String(j.label).replace(/ \(.*\)/, "").toLowerCase()}</span>
+                  </span>
+                  <span className={`text-sm ${light === "red" ? "text-blood" : "text-dim"}`}>{j.text}</span>
+                  {light !== "green" && /^https:\/\//.test(j.run?.url ?? "") && (
+                    <button type="button" className="rounded p-1 text-faint hover:text-parchment" aria-label="Open the run on GitHub" onClick={() => open(j.run.url)}>
+                      <ExternalLink className="size-4" />
+                    </button>
+                  )}
+                  {light !== "green" && <FixSlot id={`job/${j.repo}/${j.workflow}`} fix={j.fix} />}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Panel>
+
+      <Panel title="Game builds">
+        <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+          {builds.length === 0 && (
+            <li className="py-2 text-dim">
+              <Dot light="green" className="mr-3" />
+              Classic and Forever are on the builds the addons are pinned to.
+            </li>
+          )}
+          {builds.map((i) => (
+            <li key={i.id} className="flex items-start gap-3 py-2.5">
+              <Dot light={i.light} className="mt-[7px]" />
+              <p className="min-w-0 flex-1 text-parchment select-text">
+                {i.who && <b className="font-semibold">{i.who} </b>}
+                {i.what}
+              </p>
+              <FixSlot id={i.id} fix={i.fix} />
+            </li>
+          ))}
+        </ul>
+      </Panel>
     </div>
-  );
-}
-
-/** The diff's shape (the share added and removed, the counts beside it), when the tool says it (additions, deletions, changed files: data-prs.ts does not yet, so it is drawn only if present). */
-function Diff({ p }: { p: Dict }) {
-  const a = Number(p.additions), r = Number(p.deletions);
-  if (!Number.isFinite(a) || !Number.isFinite(r) || a + r === 0) return null;
-  return (
-    <p className="mt-1.5 flex items-center gap-2 font-mono text-xs text-faint" aria-label={`${a} added, ${r} removed${p.changedFiles ? `, ${p.changedFiles} files` : ""}`}>
-      <span className="text-ok">+{a}</span>
-      <span aria-hidden className="flex h-1.5 w-32 overflow-hidden rounded-sm bg-stone-3">
-        <span className="bg-ok/70" style={{ width: `${(a / (a + r)) * 100}%` }} />
-        <span className="bg-blood/70" style={{ width: `${(r / (a + r)) * 100}%` }} />
-      </span>
-      <span className="text-blood">−{r}</span>
-      {p.changedFiles ? <span>{p.changedFiles} files</span> : null}
-    </p>
   );
 }

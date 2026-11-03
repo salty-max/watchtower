@@ -38,7 +38,7 @@ export function FixButton({ fix }: { fix: Fix }) {
   if (fix.state === "tried") {
     return fix.again ? (
       <>
-        <span className={quiet}>Tried, still red</span>
+        <span className={quiet}>Tried, still failing</span>
         <button type="button" className="btn h-8 px-3 text-[13px]" onClick={() => setOpen(true)}>
           Start again
         </button>
@@ -73,7 +73,8 @@ function Running({ fix }: { fix: Fix }) {
     }
     setBusy(false);
   };
-  const word = fix.state === "ready-to-push" ? "fix ready to push" : `fix ${fix.card?.status ?? "starting"}`;
+  const st = fix.card?.status ?? "";
+  const word = fix.state === "ready-to-push" ? "A fix is ready to push." : /^waiting/.test(st) || fix.state === "waiting" ? "A fix session is waiting for you." : fix.card ? "A fix session is working on it." : "A fix session is starting.";
   return (
     <span className="flex flex-wrap items-center justify-end gap-2" data-fix-state={fix.state}>
       <span className={`text-xs ${fix.state === "ready-to-push" ? "text-ok" : "text-dim"}`}>
@@ -166,7 +167,7 @@ function FixDialog({ fix, onClose, onStarted }: { fix: Fix; onClose: () => void;
 
   return (
     <Modal title={fix.title} onClose={onClose} locked={starting}>
-      {!pv && !error && <p className="text-dim">Preparing the preview. Nothing is started.</p>}
+      {!pv && !error && <p className="text-dim">Getting the preview ready. Nothing has been started.</p>}
       {error && (
         <div className="mb-4 border-l-2 border-blood pl-3">
           <p className="text-blood select-text">{error}</p>
@@ -178,7 +179,7 @@ function FixDialog({ fix, onClose, onStarted }: { fix: Fix; onClose: () => void;
       {pv && (
         <div className="flex flex-col gap-4">
           <dl className="grid grid-cols-[6.5rem_1fr] gap-y-2 text-[13px]">
-            <dt className="text-faint">Writes to</dt>
+            <dt className="text-faint">Changes</dt>
             <dd className="flex flex-wrap gap-1.5">
               {pv.repos.map((r) => (
                 <span key={r} className="tag select-text">{r}</span>
@@ -204,7 +205,7 @@ function FixDialog({ fix, onClose, onStarted }: { fix: Fix; onClose: () => void;
           </dl>
           {pv.launchLine && <p className="border-l-2 border-amber pl-3 text-[13px] text-amber select-text">{pv.launchLine}</p>}
           <div>
-            <p className="mb-1 text-[11px] font-semibold tracking-[0.1em] text-faint uppercase">The prompt, exactly as sent</p>
+            <p className="mb-1 text-sm text-dim">This is the whole prompt the session will start with.</p>
             <pre className="max-h-72 overflow-auto rounded border border-edge bg-black/30 p-3 font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap text-dim select-text">{pv.prompt}</pre>
           </div>
           {expired && (
@@ -232,14 +233,14 @@ function FixDialog({ fix, onClose, onStarted }: { fix: Fix; onClose: () => void;
   );
 }
 
-/** The place at the right end of every red or amber row. With a fix a session could start: the Fix button, and Copy prompt beside it as the fallback. Without one: what the user does about it, as plain words (`alone`: a hand-over that is a session's job without being a fix, a push or a release, keeps its Copy button). */
-export function FixSlot({ id, prompt, fix, hint, alone, label = "Copy prompt" }: { id: string; prompt?: string; fix?: Record<string, unknown>; hint?: string; alone?: boolean; label?: string }) {
+/** The place at the right end of every red or amber row. With a fix a session could start: the Fix button, and Copy prompt beside it as the fallback. Without one: nothing (`alone`: a hand-over that is a session's job without being a fix, a push or a release, keeps its Copy button). */
+export function FixSlot({ id, prompt, fix, alone, label = "Copy prompt" }: { id: string; prompt?: string; fix?: Record<string, unknown>; alone?: boolean; label?: string }) {
   const f = fix as Fix | undefined;
   // (a prompt for a fix already under way would start a second one by hand: shown again once it has ended)
   const active = f && (f.state === "running" || f.state === "waiting" || f.state === "ready-to-push");
   return (
     <span data-fix-slot={id} data-fixable={f ? "true" : undefined} data-fix-state={f?.state} className="inline-flex flex-wrap items-center justify-end gap-2">
-      {f ? <FixButton fix={f} /> : hint && <span className="max-w-[16rem] text-right text-xs text-faint">{hint}</span>}
+      {f && <FixButton fix={f} />}
       {(f ? !active : alone) && <CopyButton text={prompt} label={label} />}
     </span>
   );
@@ -265,14 +266,14 @@ export function DispatcherBar({ fixes }: { fixes: (Record<string, unknown> | und
     }
   };
   return (
-    <p data-dispatcher-bar className="mt-4 flex flex-wrap items-center gap-3 border-l-2 border-edge-gold pl-3 text-[13px] text-dim">
-      <span>The Fix buttons below wait for a session to report to, the one that pushes what they commit.</span>
+    <div data-dispatcher-bar className="panel flex flex-wrap items-center gap-x-4 gap-y-2 p-4">
+      <span className="text-sm text-dim">Choose which session pushes what a fix commits.</span>
       {list.length === 0 ? (
-        <span className="text-faint">Open a session to report to</span>
+        <span className="text-sm text-faint">There is no session open to choose. Open one first.</span>
       ) : (
-        <select className="field h-8 text-[13px]" aria-label="Report fixes to" defaultValue="" onChange={(e) => choose(e.target)}>
+        <select className="field h-8 text-[13px]" aria-label="Which session pushes what a fix commits" defaultValue="" onChange={(e) => choose(e.target)}>
           <option value="" disabled>
-            Report to…
+            Choose a session…
           </option>
           {list.map((d) => (
             <option key={d.sessionId} value={d.sessionId}>
@@ -282,6 +283,6 @@ export function DispatcherBar({ fixes }: { fixes: (Record<string, unknown> | und
           ))}
         </select>
       )}
-    </p>
+    </div>
   );
 }

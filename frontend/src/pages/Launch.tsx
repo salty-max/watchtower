@@ -1,48 +1,30 @@
-import { Check, ClipboardCopy, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ClipboardCopy, X } from "lucide-react";
+import { useState } from "react";
 import { NavLink } from "@/components/Row";
-import { Dot, Modal, Reasons, useNow } from "@/components/ui";
+import { Dot, Panel, Reasons, Switch, useNow } from "@/components/ui";
 import { call, useApp, type Dict, type Light } from "@/lib/api";
-import { ago, hhmm, when, WORD } from "@/lib/format";
+import { ago, hhmm, when } from "@/lib/format";
+import { num } from "@/lib/queue";
 
-const VERDICT: Record<Light, [string, string, string]> = {
-  green: ["Ready for launch", "Everything the tools can check is green.", "text-ok"],
-  amber: ["Look at the amber", "", "text-amber"],
-  red: ["Fix the red first", "", "text-blood"],
-  grey: ["Gathering", "The first answers are still coming in.", "text-faint"],
-};
+const cap = (x: string) => x[0].toUpperCase() + x.slice(1);
+
 const STATUSES = ["waiting-test", "waiting-review", "ready-to-push", "done"];
+const READY: Record<Light, string> = { green: "Ready", amber: "Check first", red: "Not ready", grey: "Not read yet" };
+const tone = (l: Light) => ({ green: "text-ok", amber: "text-gold", red: "text-blood", grey: "text-faint" })[l];
 
-/** Launch night: the nine addons' readiness and the in-game checks, the night's timeline, the systems, the notes and the open questions. One page with the others, its ticks and notes in ~/.cache/watchtower/launch-night.json. */
+/** Launch night, top to bottom: the clock and how ready things are, the steps of the night, the addons and their checks, the systems, and the notes. The checks, the notes and the steps are the page. */
 export function Launch({ go }: { go: (id: string) => void }) {
   const { state, refreshAll, toast } = useApp();
   const L = state!.launch as Dict;
   return (
-    <div className="flex flex-col gap-9">
+    <div className="flex flex-col gap-5">
       <Band L={L} onRefresh={refreshAll} />
-      <Timeline L={L} />
+      <Steps L={L} />
       <Addons L={L} go={go} />
-      <div className="grid grid-cols-1 gap-x-10 gap-y-9 lg:grid-cols-2">
-        <Systems L={L} toast={toast} />
-        <ForeverData L={L} />
-      </div>
-      <div className="grid grid-cols-1 gap-x-10 gap-y-9 lg:grid-cols-2">
-        <Notes L={L} />
-        <Questions L={L} />
-      </div>
+      <Systems L={L} toast={toast} />
+      <Forever L={L} />
+      <Notes L={L} />
     </div>
-  );
-}
-
-function Box({ title, age, children }: { title: string; age?: string; children: React.ReactNode }) {
-  return (
-    <section className="border-t border-edge pt-3">
-      <h2 className="mb-3 flex items-baseline justify-between gap-3 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">
-        {title}
-        {age && <span className="text-[11px] font-normal tracking-normal normal-case">{age}</span>}
-      </h2>
-      {children}
-    </section>
   );
 }
 
@@ -57,8 +39,8 @@ function Clock({ launch, serverNow }: { launch: string; serverNow: number }) {
   const h = Math.floor((a % 86400) / 3600);
   return (
     <div>
-      <p className="title text-[44px] leading-none tabular-nums">{`T${s < 0 ? "−" : "+"}${days ? `${days}d ` : ""}${days ? p(h) : h}:${p(Math.floor((a % 3600) / 60))}:${p(a % 60)}`}</p>
-      <p className="mt-1.5 text-xs text-faint">Launch {when(launch)}</p>
+      <p className="title text-[34px] leading-none tabular-nums">{`T${s < 0 ? "−" : "+"}${days ? `${days}d ` : ""}${days ? p(h) : h}:${p(Math.floor((a % 3600) / 60))}:${p(a % 60)}`}</p>
+      <p className="mt-1.5 text-sm text-faint">Forever launches {when(launch)}</p>
     </div>
   );
 }
@@ -69,163 +51,24 @@ function Band({ L, onRefresh }: { L: Dict; onRefresh: () => void }) {
   const lights: Light[] = [L.build.light, L.chain.light, L.infra.light, L.board.light, L.sources.light, ...L.addons.map((a: Dict) => a.light)];
   const red = lights.filter((l) => l === "red").length;
   const amber = lights.filter((l) => l === "amber").length;
-  const [title, sub, tone] = VERDICT[L.overall as Light];
-  const detail = sub || `${[red && `${red} red`, amber && `${amber} amber`].filter(Boolean).join(", ")} below.`;
+  const word = (n: number, what: string) => `${num(n)} ${n === 1 ? "thing" : "things"} ${what}`;
+  const title = L.overall === "green" ? "Everything Watchtower can check is ready." : L.overall === "grey" ? "Watchtower is still reading." : cap(red ? `${word(red, "to fix")} before launch.` : `${word(amber, "to check")} before launch.`);
   return (
-    <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 border-b border-edge pb-6">
+    <section className="panel flex flex-wrap items-center gap-x-8 gap-y-4 p-5">
       <Clock launch={L.launch} serverNow={s.now} />
-      <div className="min-w-0 flex-1 basis-72">
-        <h1 className={`title flex items-center gap-3 text-[22px] leading-tight ${tone}`}>
+      <div className="min-w-0 flex-1 basis-64">
+        <h1 className="title flex items-center gap-2.5 text-xl leading-tight">
           <Dot light={L.overall} />
           {title}
         </h1>
-        <p className="mt-1 text-dim">{detail}</p>
-      </div>
-      <div className="flex flex-col items-end gap-2.5">
-        <p className="flex gap-4 text-xs text-faint">
-          <span>
-            Forever pin <b className="font-mono font-semibold text-parchment select-text">{L.build.pin ?? "?"}</b>
-          </span>
-          <span>
-            wago.tools <b className="font-mono font-semibold text-parchment select-text">{L.build.latest ?? "?"}</b>
-          </span>
-          <span>
-            TOCs <b className="font-mono font-semibold text-parchment select-text">{L.build.toc}</b>
-          </span>
-        </p>
-        <button type="button" className="btn btn-gold" onClick={onRefresh} disabled={s.busy.length > 0}>
-          {s.busy.length ? `Reading ${s.busy[0]}…` : "Refresh all"}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-/** The nine addons in the checklist's order, each folded to one line (readiness, version, CI, zip, in-game count): the first that is not green starts open. */
-function Addons({ L, go }: { L: Dict; go: (id: string) => void }) {
-  // (until the user opens or closes a row, the open one follows the readings: the first that is not green)
-  const [touched, setTouched] = useState<string[]>();
-  const open = touched ?? (L.addons as Dict[]).filter((a) => a.light !== "green").slice(0, 1).map((a) => a.id);
-  const setOpen = (next: string[]) => setTouched(next);
-  const all = open.length === L.addons.length;
-  return (
-    <section aria-label="The nine addons" className="min-w-0">
-      <h2 className="mb-1 flex items-baseline justify-between text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">
-        <span>The nine addons, in launch order</span>
-        <button type="button" className="rounded px-1.5 py-0.5 text-[11px] font-normal tracking-normal normal-case hover:text-parchment" onClick={() => setOpen(all ? [] : (L.addons as Dict[]).map((a) => a.id))}>
-          {all ? "Close all" : "Open all"}
-        </button>
-      </h2>
-      <ol className="border-b border-edge">
-        {(L.addons as Dict[]).map((a) => (
-          <AddonRow key={a.id} a={a} go={go} shown={open.includes(a.id)} toggle={() => setOpen(open.includes(a.id) ? open.filter((y) => y !== a.id) : [...open, a.id])} />
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function AddonRow({ a, go, shown, toggle }: { a: Dict; go: (id: string) => void; shown: boolean; toggle: () => void }) {
-  const { change, copy } = useApp();
-  const done = a.checks.filter((c: Dict) => c.tick === "ok").length;
-  const game = a.inGame.light === "grey" ? "not tested" : a.inGame.light === "red" ? "broken" : `${done}/${a.checks.length} ok`;
-  const tone = (l: Light) => ({ green: "text-ok", amber: "text-amber", red: "text-blood", grey: "text-faint" })[l];
-  const zip = a.zip && (a.zip.mark === "✓" ? ["zip current", "text-faint"] : /^none/.test(a.zip.text) ? ["no zip", "text-blood"] : ["zip behind", "text-amber"]);
-  return (
-    <li id={`card-${a.id}`} className="border-t border-edge">
-      <div className="grid grid-cols-[1.5rem_minmax(0,1fr)_5.5rem_8rem] items-center gap-x-4 gap-y-0.5 py-2.5 lg:grid-cols-[1.5rem_minmax(0,1fr)_5.5rem_4.5rem_3.5rem_6rem_8rem]">
-        <button type="button" aria-expanded={shown} aria-controls={`body-${a.id}`} aria-label={`${shown ? "Close" : "Open"} ${a.name}'s checks`} onClick={toggle} className="flex items-center gap-1.5 text-left">
-          <span className="w-2 text-right font-mono text-xs text-faint">{a.rank}</span>
-          <Dot light={a.light} />
-        </button>
-        <div className="flex min-w-0 items-baseline gap-2">
-          <NavLink to={`addon:${a.id}`} go={go} className="truncate font-semibold text-parchment">
-            {a.name}
-          </NavLink>
-          <span className="font-mono text-xs text-faint select-text">{a.slash}</span>
-        </div>
-        <span className={`text-[13px] ${tone(a.readiness.light)}`}>{WORD[a.readiness.light as Light]}</span>
-        <span className="font-mono text-xs text-faint select-text max-lg:hidden">{a.version && `v${a.version}`}</span>
-        <span className={`text-xs max-lg:hidden ${a.ci === "success" ? "text-faint" : "text-blood"}`}>{a.ci && `CI ${a.ci === "success" ? "✓" : a.ci}`}</span>
-        <span className={`text-xs max-lg:hidden ${zip ? zip[1] : ""}`} title={a.zip?.text}>{zip?.[0]}</span>
-        <span className={`text-right text-xs ${a.inGame.light === "grey" ? "text-faint" : tone(a.inGame.light)}`}>in game: {game}</span>
-        <p className="col-start-2 col-end-5 flex gap-4 text-xs text-faint lg:hidden">
-          {a.version && <span className="font-mono">v{a.version}</span>}
-          {a.ci && <span className={a.ci === "success" ? "" : "text-blood"}>CI {a.ci === "success" ? "✓" : a.ci}</span>}
-          {zip && <span className={zip[1]}>{zip[0]}</span>}
+        <p className="mt-1 text-sm text-faint select-text">
+          Forever is pinned to {L.build.pin ?? "an unknown build"}, wago.tools has {L.build.latest ?? "an unknown build"}, and our TOC files say {L.build.toc}.
         </p>
       </div>
-      {shown && (
-        <div id={`body-${a.id}`} className="pb-4 pl-8">
-          <Reasons v={a.readiness} />
-          <ul className="mt-3 flex flex-col divide-y divide-edge/70 border-t border-edge/70">
-            {a.checks.map((c: Dict) => (
-              <li key={c.id} className="py-2.5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-parchment select-text">{c.look}</p>
-                    <p className="mt-0.5 text-[13px] text-faint select-text">{c.ok}</p>
-                  </div>
-                  <div role="group" aria-label={c.look} className="flex shrink-0 overflow-hidden rounded-md border border-edge">
-                    {(["ok", "broken"] as const).map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        aria-pressed={c.tick === v}
-                        onClick={() => change({ op: "tick", key: `${a.id}/${c.id}`, value: c.tick === v ? "untested" : v })}
-                        className={`h-8 px-3 text-[13px] transition-colors ${c.tick === v ? (v === "ok" ? "bg-ok/20 text-ok" : "bg-blood/20 text-blood") : "bg-stone-2 text-dim hover:text-parchment"}`}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {c.tick === "broken" && (
-                  <div className="mt-2 border-l-2 border-blood pl-3 text-[13px] text-dim select-text">
-                    <b className="text-parchment">If it's broken:</b> {c.todo}
-                    <p className="mt-1 text-faint">Fixed by: {c.fix}</p>
-                    <button type="button" className="btn btn-ghost mt-1.5 h-7 px-2 text-xs" onClick={() => copy(`${a.name}: ${c.look}: `, "Copied: it starts a note")}>
-                      Copy a note start
-                    </button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-[13px] text-faint select-text">{a.risk}</p>
-          <div className="mt-3 flex gap-2">
-            <StoreDry repo={a.id} />
-          </div>
-        </div>
-      )}
-    </li>
-  );
-}
-
-function StoreDry({ repo }: { repo: string }) {
-  const { toast } = useApp();
-  const [run, setRun] = useState<string>();
-  const go = async () => {
-    setRun("Reading CurseForge, Wago and GitHub. Nothing is saved…");
-    try {
-      const r = await call<Dict>("/api/action", { name: "store-dry", repo });
-      setRun((r.ok ? "" : "(exit non-zero)\n") + r.out);
-    } catch (e) {
-      setRun(undefined);
-      toast(e instanceof Error ? e.message : String(e), "error");
-    }
-  };
-  return (
-    <>
-      <button type="button" className="btn btn-ghost h-8 border-edge px-3 text-[13px]" onClick={go}>
-        Store page dry run
+      <button type="button" className="btn btn-gold" onClick={onRefresh} disabled={s.busy.length > 0}>
+        {s.busy.length ? `Reading ${s.busy[0]}…` : "Read everything again"}
       </button>
-      {run !== undefined && (
-        <Modal title={`Store page dry run: ${repo}`} onClose={() => setRun(undefined)}>
-          <pre className="font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap text-dim select-text">{run}</pre>
-        </Modal>
-      )}
-    </>
+    </section>
   );
 }
 
@@ -238,90 +81,200 @@ function tMark(at: string, launch: string): string {
   return `T${m < 0 ? "−" : "+"}${[d && `${d}d`, h && `${h}h`, r && `${r}m`].filter(Boolean).join(" ")}`;
 }
 
-/** The night's steps: the next four that are not done, and every step behind one button (a long list would push the addons off the page). */
-function Timeline({ L }: { L: Dict }) {
+/** The night's steps: the next four that are not done, and every step behind one button. */
+function Steps({ L }: { L: Dict }) {
   const { change } = useApp();
   const [all, setAll] = useState(false);
   const steps: Dict[] = L.timeline;
+  const done = steps.filter((t) => t.done).length;
   const shown = all ? steps : steps.filter((t) => !t.done).slice(0, 4);
   return (
-    <Box title={`Timeline, ${steps.filter((t) => t.done).length} of ${steps.length} done`}>
-      <ol>
+    <Panel title="Steps for the night" note={`${done} of ${steps.length} done.`}>
+      <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
         {shown.map((t: Dict) => (
-          <li key={t.id} className={`grid grid-cols-[1.25rem_8.5rem_minmax(0,1fr)] items-start gap-x-3 border-t border-edge py-2.5 ${t.done ? "opacity-50" : t.past && !t.next ? "opacity-80" : ""} ${t.next ? "border-l-2 border-l-gold pl-3" : ""}`}>
-            <input type="checkbox" className="mt-1 size-4 shrink-0 accent-[#c9a227]" checked={t.done} onChange={(e) => change({ op: "step", id: t.id, done: e.target.checked })} aria-label={t.title} />
-            <p className={`pt-px text-xs ${t.next ? "text-gold" : "text-faint"}`}>
-              <span className="mr-2 font-mono">{tMark(t.at, L.launch)}</span>
-              {when(t.at)}
-              {t.next && <span className="block">next</span>}
-            </p>
-            <div className="min-w-0">
-              <p className={`font-medium text-parchment ${t.done ? "line-through" : ""}`}>{t.title}</p>
-              <p className="text-[13px] text-dim select-text">{t.detail}</p>
+          <li key={t.id} className={`flex items-start gap-3 py-3 ${t.done ? "opacity-60" : ""}`}>
+            <span className="pt-0.5">
+              <Switch on={t.done} onChange={(on) => change({ op: "step", id: t.id, done: on })} label={`${t.title}: done`} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className={`font-semibold text-parchment ${t.done ? "line-through" : ""}`}>{t.title}</p>
+              <p className="mt-0.5 text-sm text-dim select-text">{t.detail}</p>
             </div>
+            <p className={`shrink-0 text-right text-sm ${t.next ? "text-gold" : "text-faint"}`}>
+              <span className="font-mono">{tMark(t.at, L.launch)}</span>
+              <span className="block">{t.next ? "Next, " : ""}{when(t.at)}</span>
+            </p>
           </li>
         ))}
-      </ol>
+      </ul>
       {steps.length > shown.length || all ? (
-        <button type="button" className="btn mt-2 h-8 px-3 text-[13px]" aria-expanded={all} onClick={() => setAll(!all)}>
-          {all ? "Only the next steps" : `All ${steps.length} steps`}
+        <button type="button" className="btn mt-3 h-8 px-3 text-[13px]" aria-expanded={all} onClick={() => setAll(!all)}>
+          {all ? "Show only the next steps" : `Show all ${num(steps.length)} steps`}
         </button>
       ) : null}
-    </Box>
+    </Panel>
+  );
+}
+
+/** The nine addons in launch order, each with its checks behind one button. */
+function Addons({ L, go }: { L: Dict; go: (id: string) => void }) {
+  const [open, setOpen] = useState<string[]>();
+  // (until the user opens or closes one, the open one follows the readings: the first that is not ready)
+  const shown = open ?? (L.addons as Dict[]).filter((a) => a.light !== "green").slice(0, 1).map((a) => a.id);
+  return (
+    <Panel title="Addons" note="In the order to test them. Open one to tick its checks.">
+      <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+        {(L.addons as Dict[]).map((a) => (
+          <AddonRow key={a.id} a={a} go={go} shown={shown.includes(a.id)} toggle={() => setOpen(shown.includes(a.id) ? shown.filter((x) => x !== a.id) : [...shown, a.id])} />
+        ))}
+      </ul>
+    </Panel>
+  );
+}
+
+function AddonRow({ a, go, shown, toggle }: { a: Dict; go: (id: string) => void; shown: boolean; toggle: () => void }) {
+  const { change, copy } = useApp();
+  const done = a.checks.filter((c: Dict) => c.tick === "ok").length;
+  const game = a.inGame.light === "grey" ? "Not tested" : a.inGame.light === "red" ? "Broken" : `${num(done)} of ${num(a.checks.length)} passed`;
+  return (
+    <li id={`card-${a.id}`} className="py-2.5">
+      <div className="flex items-center gap-3">
+        <Dot light={a.light} />
+        <NavLink to={`addon:${a.id}`} go={go} className="font-semibold text-parchment">
+          {a.name}
+        </NavLink>
+        <span className={`text-sm ${tone(a.readiness.light)}`}>{READY[a.readiness.light as Light]}</span>
+        <span className={`ml-auto text-sm ${a.inGame.light === "red" ? "text-blood" : "text-dim"}`}>{game}</span>
+        <button type="button" className="btn h-8 px-3 text-[13px]" aria-expanded={shown} aria-controls={`body-${a.id}`} onClick={toggle}>
+          {shown ? "Hide checks" : "Checks"}
+        </button>
+      </div>
+      {shown && (
+        <div id={`body-${a.id}`} className="mt-2 ml-5">
+          <Reasons v={a.readiness} />
+          <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+            {a.checks.map((c: Dict) => (
+              <li key={c.id} className="py-2.5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-parchment select-text">{c.look}</p>
+                    <p className="mt-0.5 text-sm text-faint select-text">{c.ok}</p>
+                  </div>
+                  <div role="group" aria-label={c.look} className="flex shrink-0 overflow-hidden rounded-md border border-edge">
+                    {(["ok", "broken"] as const).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        aria-pressed={c.tick === v}
+                        onClick={() => change({ op: "tick", key: `${a.id}/${c.id}`, value: c.tick === v ? "untested" : v })}
+                        className={`h-8 px-3 text-[13px] transition-colors ${c.tick === v ? (v === "ok" ? "bg-ok/20 text-ok" : "bg-blood/20 text-blood") : "bg-stone-2 text-dim hover:text-parchment"}`}
+                      >
+                        {v === "ok" ? "Works" : "Broken"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {c.tick === "broken" && (
+                  <div className="mt-2 border-l-2 border-blood pl-3 text-sm text-dim select-text">
+                    <p>
+                      <b className="text-parchment">If it is broken:</b> {c.todo}
+                    </p>
+                    <p className="mt-1 text-faint">Fixed by: {c.fix}</p>
+                    <button type="button" className="btn mt-2 h-8 px-3 text-[13px]" onClick={() => copy(`${a.name}: ${c.look}: `, "Copied. It starts a note.")}>
+                      Copy the start of a note
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-sm text-faint select-text">{a.risk}</p>
+        </div>
+      )}
+    </li>
   );
 }
 
 function Systems({ L, toast }: { L: Dict; toast: (t: string, tone?: "ok" | "error") => void }) {
-  const { state, reload } = useApp();
-  const ages = state!.ages;
-  const age = (k: string) => (ages[k] ? (ages[k].error ? "failed" : `${ago(ages[k].at)}${ages[k].cached ? " (cached)" : ""}`) : "not read yet");
-  const rows: [string, Dict, string[]?][] = [
-    ["Forever build", L.build],
-    ["Data chain", L.chain],
-    ["Site and inbox", L.infra, L.infra.reasons.length ? undefined : (L.infra.probes ?? []).map((p: Dict) => `${p.name} ${p.status} · ${p.ms} ms`)],
-    ["Board", L.board],
-    ["Readings", L.sources],
+  const { reload } = useApp();
+  const rows: [string, Dict, string][] = [
+    ["Forever build", L.build, "The pinned build is the latest one."],
+    ["Data jobs", L.chain, "Every addon's game data job is passing."],
+    ["Site and inbox", L.infra, (L.infra.probes ?? []).map((p: Dict) => `${p.name} answered in ${p.ms} ms`).join(", ") + "."],
+    ["Watchtower's readings", L.sources, "Everything was read."],
   ];
   const setCard = async (id: string, status: string) => {
     try {
       const r = await call<Dict>("/api/action", { name: "card", id, status });
-      if (!r.ok) toast(r.out || "The board said no", "error");
+      if (!r.ok) toast(r.out || "The board said no.", "error");
     } catch (e) {
       toast(e instanceof Error ? e.message : String(e), "error");
     }
     await reload();
   };
   return (
-    <Box title="Systems" age={`build ${age("latest")} · runs ${age("status")} · preflight ${age("preflight")}`}>
-      <ul className="flex flex-col gap-3">
-        {rows.map(([name, v, extra]) => (
-          <li key={name} className="flex gap-3">
-            <Dot light={v.light} className="mt-1.5" />
-            <div className="min-w-0">
-              <p className="font-medium text-parchment">{name}</p>
-              <div className="text-[13px] text-dim select-text">{(extra ?? (v.reasons.length ? v.reasons : ["all clear"])).map((r: string, i: number) => <p key={i}>{r}</p>)}</div>
+    <Panel title="Systems">
+      <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+        {rows.map(([name, v, fine]) => (
+          <li key={name} className="flex items-start gap-3 py-2.5">
+            <Dot light={v.light} className="mt-[7px]" />
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-parchment">{name}</p>
+              <div className="text-sm text-dim select-text">{v.reasons.length ? v.reasons.map((r: string, i: number) => <p key={i}>{r}</p>) : <p>{fine}</p>}</div>
             </div>
           </li>
         ))}
       </ul>
       {L.board.cards.length > 0 && (
-        <ul className="mt-4 flex flex-col gap-1.5 border-t border-edge/70 pt-3">
-          {L.board.cards.map((c: Dict) => (
-            <li key={c.id} className="flex items-center justify-between gap-3 text-[13px] text-dim">
-              <span className="min-w-0 truncate" title={c.title}>
-                {c.title}
-              </span>
-              <select className="field h-8 shrink-0 text-[13px]" value={c.status} aria-label={`Status of ${c.title}`} onChange={(e) => setCard(c.id, e.target.value)}>
-                {!STATUSES.includes(c.status) && <option disabled>{c.status}</option>}
-                {STATUSES.map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </select>
-            </li>
-          ))}
-        </ul>
+        <>
+          <h3 className="mt-4 text-sm text-dim">Open cards on the board</h3>
+          <ul className="mt-1 flex flex-col divide-y divide-white/[0.05]">
+            {L.board.cards.map((c: Dict) => (
+              <li key={c.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <span className="min-w-0 truncate text-parchment" title={c.title}>
+                  {c.title}
+                </span>
+                <select className="field h-8 shrink-0 text-[13px]" value={c.status} aria-label={`Status of ${c.title}`} onChange={(e) => setCard(c.id, e.target.value)}>
+                  {!STATUSES.includes(c.status) && <option disabled>{c.status}</option>}
+                  {STATUSES.map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
-    </Box>
+    </Panel>
+  );
+}
+
+function Forever({ L }: { L: Dict }) {
+  const { state } = useApp();
+  const d = L.data;
+  const k = d.kinds ?? {};
+  const age = state!.ages["launch-data"];
+  const rows: [string, unknown][] = [...(d.zones ?? []).map((z: Dict) => [`Quests in ${z.zone}`, z.quests] as [string, unknown]), ["Factions", k.faction], ["Creatures", k.creature], ["Quests in all", k.quest]];
+  return (
+    <Panel title="Forever data" note={age ? `Read ${ago(age.at)}${age.cached ? " (an old reading)" : ""}.` : "Not read yet."}>
+      {d.error && !d.zones ? (
+        <p className="mt-3 text-sm text-dim select-text">{d.error}</p>
+      ) : (
+        <>
+          <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+            {rows.map(([name, v]) => (
+              <li key={name} className="flex items-baseline justify-between py-2">
+                <span className="text-dim">{name}</span>
+                <span className="text-parchment tabular-nums">{String(v ?? "?")}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm text-faint select-text">
+            forever.db was built on {String(d.builtAt ?? "").slice(0, 10)} from build {d.pins ?? "?"}. The second Codex wave and Goodwill's Forever factions wait on these numbers.
+          </p>
+        </>
+      )}
+    </Panel>
   );
 }
 
@@ -341,10 +294,10 @@ function Notes({ L }: { L: Dict }) {
   };
   const shots: { name: string }[] = L.shots.list;
   return (
-    <Box title="What broke">
-      <form onSubmit={submit} className="flex flex-col gap-2.5">
+    <Panel title="What broke" note="Write down anything that goes wrong, so a session can fix it in the morning.">
+      <form onSubmit={submit} className="mt-3 flex flex-col gap-2.5">
         <div className="flex gap-2">
-          <select className="field min-w-0 flex-1" value={addon} onChange={(e) => setAddon(e.target.value)} aria-label="Addon">
+          <select className="field min-w-0 flex-1" value={addon} onChange={(e) => setAddon(e.target.value)} aria-label="Which addon">
             {L.addons.map((a: Dict) => (
               <option key={a.id} value={a.id}>
                 {a.name}
@@ -352,19 +305,21 @@ function Notes({ L }: { L: Dict }) {
             ))}
             <option value="other">Something else</option>
           </select>
-          <select className="field" value={severity} onChange={(e) => setSeverity(e.target.value)} aria-label="Severity">
-            {["bug", "blocker", "nit"].map((s) => (
-              <option key={s}>{s}</option>
+          <select className="field" value={severity} onChange={(e) => setSeverity(e.target.value)} aria-label="How bad">
+            {[["blocker", "Blocks play"], ["bug", "A bug"], ["nit", "A small thing"]].map(([v, w]) => (
+              <option key={v} value={v}>
+                {w}
+              </option>
             ))}
           </select>
         </div>
-        <textarea className="field h-24 resize-y py-2" value={text} onChange={(e) => setText(e.target.value)} placeholder="What you saw, what you did, the error text" aria-label="What broke" />
+        <textarea className="field h-24 resize-y py-2" value={text} onChange={(e) => setText(e.target.value)} placeholder="What you saw, what you did, the error text" aria-label="What went wrong" />
         {L.shots.error ? (
-          <p className="text-xs text-faint select-text">{L.shots.error}</p>
+          <p className="text-sm text-faint select-text">{L.shots.error}</p>
         ) : shots.length === 0 ? (
-          <p className="text-xs text-faint">No screenshot in iCloud Drive since an hour before launch.</p>
+          <p className="text-sm text-faint">There is no screenshot in iCloud Drive from the last hour before launch.</p>
         ) : (
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-5 gap-1.5">
             {shots.map((s) => (
               <button key={s.name} type="button" aria-pressed={shot === s.name} aria-label={`Attach ${s.name}`} onClick={() => setShot(shot === s.name ? undefined : s.name)} className={`overflow-hidden rounded-md border-2 ${shot === s.name ? "border-gold" : "border-edge"}`}>
                 <img src={`/api/shot?f=${encodeURIComponent(s.name)}`} alt={s.name} loading="lazy" className="aspect-video w-full object-cover" />
@@ -376,103 +331,29 @@ function Notes({ L }: { L: Dict }) {
           <button type="submit" className="btn btn-gold" disabled={!text.trim()}>
             Add the note
           </button>
-          <button type="button" className="btn btn-ghost px-2.5 text-[13px]" onClick={async () => copy(await (await fetch("/api/notes")).text(), "The night's notes are copied")}>
-            <ClipboardCopy className="size-3.5" aria-hidden />
-            Copy the notes
+          <button type="button" className="btn btn-ghost" onClick={async () => copy(await (await fetch("/api/notes")).text(), "Copied the night's notes.")}>
+            <ClipboardCopy className="size-4" aria-hidden />
+            Copy all notes
           </button>
         </div>
       </form>
-      <ul className="mt-4 flex flex-col gap-2.5">
-        {L.notes.length === 0 && <li className="text-[13px] text-faint">Nothing broken yet.</li>}
+      <ul className="mt-4 flex flex-col divide-y divide-white/[0.05]">
+        {L.notes.length === 0 && <li className="py-2 text-sm text-dim">Nothing has gone wrong yet.</li>}
         {[...L.notes].reverse().map((n: Dict) => (
-          <li key={n.id} className="rounded-lg border border-edge bg-black/20 px-3 py-2 text-[13px] text-dim">
-            <div className="mb-1 flex items-center gap-2 text-xs">
-              <span className={`rounded-full border px-1.5 ${n.severity === "blocker" ? "border-blood/60 text-blood" : n.severity === "bug" ? "border-amber/50 text-amber" : "border-edge text-faint"}`}>{n.severity}</span>
+          <li key={n.id} className="py-2.5">
+            <div className="flex items-center gap-2 text-sm">
+              <Dot light={n.severity === "blocker" ? "red" : n.severity === "bug" ? "amber" : "grey"} />
               <b className="font-semibold text-parchment">{name(n.addon)}</b>
               <span className="text-faint">{hhmm(n.at)}</span>
-              <button type="button" className="btn btn-ghost -mr-1 ml-auto h-6 px-1.5" aria-label="Delete note" onClick={() => change({ op: "drop", id: n.id })}>
-                <X className="size-3.5" />
+              <button type="button" className="btn btn-ghost -mr-2 ml-auto h-7 px-2" aria-label="Delete this note" onClick={() => change({ op: "drop", id: n.id })}>
+                <X className="size-4" />
               </button>
             </div>
-            <p className="select-text">{n.text}</p>
-            {n.shot && <img src={`/api/shot?f=${encodeURIComponent(n.shot)}`} alt="screenshot" loading="lazy" className="mt-2 rounded-md border border-edge" />}
+            <p className="mt-1 ml-5 text-sm text-dim select-text">{n.text}</p>
+            {n.shot && <img src={`/api/shot?f=${encodeURIComponent(n.shot)}`} alt="A screenshot of what went wrong" loading="lazy" className="mt-2 ml-5 rounded-md border border-edge" />}
           </li>
         ))}
       </ul>
-    </Box>
-  );
-}
-
-function Questions({ L }: { L: Dict }) {
-  return (
-    <Box title="Open questions">
-      <ul className="flex flex-col gap-4">
-        {L.questions.map((q: Dict) => (
-          <Question key={q.id} q={q} />
-        ))}
-      </ul>
-    </Box>
-  );
-}
-
-function Question({ q }: { q: Dict }) {
-  const { change } = useApp();
-  // (typed here and saved when the field is left, so a reading never eats a word)
-  const [text, setText] = useState(q.text);
-  useEffect(() => setText(q.text), [q.text]);
-  return (
-    <li>
-      <label className="flex items-start gap-2.5">
-        <input type="checkbox" className="mt-1 size-4 shrink-0 accent-[#c9a227]" checked={q.done} onChange={(e) => change({ op: "answer", id: q.id, done: e.target.checked, text })} />
-        <span className="font-medium text-parchment">{q.title}</span>
-      </label>
-      <p className="mt-1 text-[13px] text-dim select-text">{q.ask}</p>
-      <p className="mt-0.5 flex items-start gap-1.5 text-[13px] text-faint select-text">
-        <Check className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-        {q.ok}
-      </p>
-      <input className="field mt-2 w-full" value={text} maxLength={1000} placeholder="What you saw" aria-label={`Answer: ${q.title}`} onChange={(e) => setText(e.target.value)} onBlur={() => text !== q.text && change({ op: "answer", id: q.id, done: q.done, text })} />
-    </li>
-  );
-}
-
-function ForeverData({ L }: { L: Dict }) {
-  const { state } = useApp();
-  const d = L.data;
-  const k = d.kinds ?? {};
-  return (
-    <Box title="Forever data" age={state!.ages["launch-data"] ? `${ago(state!.ages["launch-data"].at)}${state!.ages["launch-data"].cached ? " (cached)" : ""}` : "not read yet"}>
-      {d.error && !d.zones ? (
-        <p className="text-[13px] text-faint select-text">{d.error}</p>
-      ) : (
-        <>
-          <table className="w-full text-[13px]">
-            <tbody>
-              {(d.zones ?? []).map((z: Dict) => (
-                <tr key={z.zone}>
-                  <td className="py-0.5 text-dim">{z.zone} quests</td>
-                  <td className={`py-0.5 text-right tabular-nums ${z.quests ? "text-parchment" : "text-faint"}`}>{z.quests}</td>
-                </tr>
-              ))}
-              {(
-                [
-                  ["Factions", k.faction],
-                  ["Creatures", k.creature],
-                  ["Quests in all", k.quest],
-                ] as const
-              ).map(([n, v]) => (
-                <tr key={n}>
-                  <td className="py-0.5 text-dim">{n}</td>
-                  <td className="py-0.5 text-right text-parchment tabular-nums">{v ?? "?"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-2.5 text-xs text-faint select-text">
-            forever.db built {String(d.builtAt ?? "").slice(0, 10)} at build {d.pins ?? "?"}. These are what Codex wave 2 and Goodwill's Forever factions wait on.
-          </p>
-        </>
-      )}
-    </Box>
+    </Panel>
   );
 }

@@ -1,112 +1,116 @@
-// The overview's queue (frontend/src/lib/queue.ts) from the demo's real-shaped state: red first, a shared reason said once, nothing green, one slot id per row.
+// The window's list of what to do (frontend/src/lib/queue.ts) from the demo's real-shaped state and from small made-up ones: red first, one sentence each, a shared thing said once, nothing hidden by a dedupe.
 import { describe, expect, test } from "bun:test";
 import { demoCells } from "./demo";
 import { view } from "./view";
-import { queue, quiet } from "../frontend/src/lib/queue";
+import { itemsFor, queue, quiet, waitingToPush } from "../frontend/src/lib/queue";
 
 const NOW = Date.parse("2026-11-03T16:30:00Z");
-const s = view(demoCells(NOW), [], NOW) as never;
+const demo = view(demoCells(NOW), [], NOW) as never;
+const ok = { light: "green", reasons: [] };
+const base = (over: Record<string, unknown>) => ({ releases: { addons: [], repos: [], verdict: ok }, data: { jobs: [], prs: [], builds: ok, errors: [], verdict: ok }, stores: { stores: [], verdict: ok }, zips: { zips: [], verdict: ok }, ...over }) as never;
+const addon = (name: string, rows: Record<string, unknown>[], extra: Record<string, unknown> = {}) => ({ name, rows, verdict: { light: rows.some((r) => r.mark === "✗") ? "red" : "amber", reasons: [] }, ...extra });
+const repo = (name: string, over: Record<string, unknown> = {}) => ({ name, ahead: 0, behind: 0, dirty: 0, verdict: ok, ...over });
 
-describe("the queue", () => {
-  const items = queue(s);
-  test("red rows come before amber, amber before grey, and none is green", () => {
+describe("the list", () => {
+  const items = queue(demo);
+  test("red comes before amber, amber before grey, and every id is its own", () => {
     const order = { red: 0, amber: 1, grey: 2 } as Record<string, number>;
-    expect(items.every((i) => i.light in order)).toBe(true);
-    expect(items.map((i) => order[i.light])).toEqual([...items.map((i) => order[i.light])].sort());
+    expect(items.map((i) => order[i.light])).toEqual(items.map((i) => order[i.light]).sort());
     expect(items.some((i) => i.light === "red")).toBe(true);
+    expect(new Set(items.map((i) => i.id)).size).toBe(items.length);
   });
-  test("every row has its own id, which is its fix slot's", () => {
-    const ids = items.map((i) => i.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-  test("a reason most addons share is one row naming them", () => {
-    const shared = items.filter((i) => i.names && i.names.length >= 3 && i.page === "releases");
-    for (const r of shared) expect(r.where).toMatch(/^\d+ of \d+ addons$/);
+  test("every item is a sentence: who it is about, then what is true", () => {
+    for (const i of items) {
+      expect(i.who.length).toBeGreaterThan(0);
+      expect(i.what.length).toBeGreaterThan(8);
+      expect(i.what).not.toContain(";");
+    }
   });
   test("the quiet line counts what is green", () => {
-    const q = quiet(s);
-    expect(q.storesOf).toBe((s as never as { stores: { stores: unknown[] } }).stores.stores.length);
+    const q = quiet(demo);
     expect(q.stores).toBeLessThanOrEqual(q.storesOf);
+  });
+  test("waitingToPush lists repositories with commits not pushed", () => {
+    expect(waitingToPush(demo).every((p) => p.ahead > 0)).toBe(true);
   });
 });
 
-describe("what the dedupes must not hide", () => {
-  const base = (over: Record<string, unknown>) => ({ releases: { addons: [], repos: [], verdict: { light: "green", reasons: [] } }, data: { jobs: [], prs: [], builds: { light: "green", reasons: [] }, errors: [], verdict: { light: "green", reasons: [] } }, stores: { stores: [], verdict: { light: "green", reasons: [] } }, zips: { zips: [], verdict: { light: "green", reasons: [] } }, ...over }) as never;
-  test("a git cross on an addon does not hide its repository's red CI", () => {
-    const s = base({ releases: { addons: [{ name: "yonder", rows: [{ mark: "✗", label: "git", text: "1 ahead" }], verdict: { light: "red", reasons: [] } }], repos: [{ name: "yonder", verdict: { light: "red", reasons: ["1 unpushed", "CI failure"] } }], verdict: { light: "red", reasons: [] } } });
+describe("what each kind of light says", () => {
+  test("a git stop is a sentence about commits behind origin and what to do, and does not hide a red CI", () => {
+    const s = base({ releases: { addons: [addon("yonder", [{ mark: "✗", label: "git", text: "1 to pull: release.sh wants main clean and in sync" }])], repos: [repo("yonder", { behind: 1, verdict: { light: "red", reasons: ["1 behind origin", "CI failure"] } })], verdict: ok } });
     const items = queue(s);
-    expect(items.some((i) => i.what === "CI failure" && i.light === "red")).toBe(true);
-    expect(items.some((i) => i.what === "1 unpushed")).toBe(false);
+    expect(items.find((i) => i.id === "rel/yonder/git")?.what).toContain("one commit behind origin. Pull it before a release.");
+    expect(items.some((i) => /failed CI run/.test(i.what) && i.light === "red")).toBe(true);
+    expect(items.some((i) => /behind origin/.test(i.what) && i.id.startsWith("repo/"))).toBe(false);
   });
-  test("the Data page's failed reading shows, amber, and not-answered shows grey", () => {
-    const s = base({ data: { jobs: [], prs: [], builds: { light: "green", reasons: [] }, errors: [], verdict: { light: "amber", reasons: ["data-prs failed, showing its last answer: boom", "latest has not answered yet"] } } });
+  test("a reason most addons share is one item naming them, and a tool is never one of them", () => {
+    const row = (n: string) => addon(n, [{ mark: "!", label: "review", text: "none recorded" }]);
+    const s = base({ launch: { build: { reasons: [] }, infra: { reasons: [] }, sources: { reasons: [] }, addons: ["a", "b", "c"].map((id) => ({ id, name: id.toUpperCase(), inGame: { light: "green" }, checks: [] })) }, releases: { addons: [row("a"), row("b"), row("c"), row("wow-locker")], repos: [], verdict: ok } });
     const items = queue(s);
-    expect(items.map((i) => i.light)).toEqual(["amber", "grey"]);
+    const shared = items.find((i) => i.addons);
+    expect(shared?.who).toBe("All three addons");
+    expect(shared?.what).toBe("have commits with no review yet.");
+    expect(shared?.addons).toEqual(["a", "b", "c"]);
+    expect(items.some((i) => i.who === "wow-locker")).toBe(true);
   });
-  test("a Classic build reason stays when launch night says Forever's", () => {
-    const s = base({ launch: { build: { light: "amber", reasons: ["forever moved"] }, infra: { reasons: [] }, sources: { reasons: [] }, addons: [] }, data: { jobs: [], prs: [], builds: { light: "amber", reasons: ["forever moved", "classic: pin behind"] }, errors: [], verdict: { light: "amber", reasons: [] } } });
-    expect(queue(s).some((i) => i.what === "classic: pin behind")).toBe(true);
-  });
-  test("a red CI on an addon keeps the repository line's fix and prompt on its row", () => {
-    const fix = { key: "keyring/ci/CI", state: "offered" };
-    const s = base({ releases: { addons: [{ name: "keyring", rows: [{ mark: "✗", label: "CI", text: "failure on HEAD" }], verdict: { light: "red", reasons: [] }, fix: { key: "keyring/release/preflight" } }], repos: [{ name: "keyring", verdict: { light: "red", reasons: ["CI failure"] }, fix, prompt: "fix the CI" }], verdict: { light: "red", reasons: [] } } });
-    const rows = queue(s).filter((i) => i.where === "keyring");
-    expect(rows).toHaveLength(1);
-    expect(rows[0].fix).toEqual(fix);
-    expect(rows[0].prompt).toBe("fix the CI");
-  });
-  test("a pull request's reason loses its own name and title", () => {
-    const s = base({ data: { jobs: [], prs: [{ repo: "wow-data", number: 42, title: "pins: forever", verdict: { light: "red", reasons: ["wow-data #42 pins: forever: its checks failure"] } }], builds: { light: "green", reasons: [] }, errors: [], verdict: { light: "red", reasons: [] } } });
-    expect(queue(s)[0].what).toBe("pins: forever: its checks failure");
-  });
-  test("commits to push on a repository that is dirty, behind or unread are in the way, and a CI that is not success is red", () => {
-    const s = base({ releases: { addons: [], repos: [
-      { name: "wow-data", ahead: 2, behind: 0, dirty: 3, verdict: { light: "green", reasons: [] } },
-      { name: "addon-kit", ahead: 0, behind: 0, dirty: 0, verdict: { light: "amber", reasons: ["CI timed_out"] } },
-    ], verdict: { light: "amber", reasons: [] } } });
+  test("commits to push on a repository that is dirty or behind are in the way, a failed CI run is red", () => {
+    const s = base({ releases: { addons: [], repos: [repo("wow-data", { ahead: 2, dirty: 3 }), repo("addon-kit", { verdict: { light: "amber", reasons: ["CI timed_out"] } })], verdict: ok } });
     const items = queue(s);
-    expect(items.find((i) => i.where === "wow-data")?.light).toBe("red");
-    expect(items.find((i) => i.where === "addon-kit")?.light).toBe("red");
+    expect(items.find((i) => i.who === "wow-data")?.light).toBe("red");
+    expect(items.find((i) => i.who === "addon-kit")?.what).toContain("failed CI run");
   });
-  test("an addon's fix sits on its first row only", () => {
-    const fix = { key: "yonder/release/preflight" };
-    const s = base({ releases: { addons: [{ name: "yonder", fix, rows: [{ mark: "✗", label: "git", text: "x" }, { mark: "✗", label: "interface", text: "y" }], verdict: { light: "red", reasons: [] } }], repos: [], verdict: { light: "red", reasons: [] } } });
-    expect(queue(s).filter((i) => i.fix)).toHaveLength(1);
+  test("a pull request is a sentence, and a Players one says to read it first", () => {
+    const pr = (kind: string, reason: string) => ({ repo: "wow-data", number: 42, title: "pins: forever", kind, verdict: { light: kind === "players" ? "amber" : "red", reasons: [reason] } });
+    expect(queue(base({ data: { jobs: [], prs: [pr("pins", "wow-data #42 pins: forever: its checks failure")], builds: ok, errors: [], verdict: ok } }))[0].what).toBe("has pull request #42 (pins: forever) with failing checks.");
+    expect(queue(base({ data: { jobs: [], prs: [pr("players", "strangers")], builds: ok, errors: [], verdict: ok } }))[0].what).toContain("Read it line by line");
   });
   test("an addon with no CurseForge project is not a reading that failed", () => {
-    const s = base({ stores: { stores: [{ repo: "goodwill", read: false, why: "not-on-curseforge", verdict: { light: "grey", reasons: ["not on CurseForge"] } }], verdict: { light: "grey", reasons: [] } } });
+    const s = base({ stores: { stores: [{ repo: "goodwill", read: false, why: "not-on-curseforge", verdict: { light: "grey", reasons: ["x"] } }], verdict: ok } });
     expect(queue(s)).toHaveLength(0);
   });
-  test("a tool that is not one of the addons never counts in 'N of M addons'", () => {
-    const rows = (n: string) => ({ name: n, rows: [{ mark: "!", label: "review", text: "none recorded" }], verdict: { light: "amber", reasons: [] } });
-    const s = base({ launch: { build: { reasons: [] }, infra: { reasons: [] }, sources: { reasons: [] }, addons: [{ id: "a", inGame: { light: "green" }, checks: [] }, { id: "b", inGame: { light: "green" }, checks: [] }, { id: "c", inGame: { light: "green" }, checks: [] }] }, releases: { addons: [rows("a"), rows("b"), rows("c"), rows("wow-locker")], repos: [], verdict: { light: "amber", reasons: [] } } });
-    const items = queue(s);
-    const shared = items.find((i) => i.names);
-    expect(shared?.where).toBe("3 of 3 addons");
-    expect(shared?.names).toEqual(["a", "b", "c"]);
-    expect(items.some((i) => i.where === "wow-locker")).toBe(true);
-  });
-  test("a light no session can fix keeps what to do about it and no prompt to copy; a fixable one keeps its prompt", () => {
-    const s = base({ releases: { addons: [{ name: "x", rows: [{ mark: "!", label: "CI", text: "last run not on HEAD" }], verdict: { light: "amber", reasons: [] }, prompt: "p" }], repos: [{ name: "y", ahead: 0, behind: 0, dirty: 0, verdict: { light: "red", reasons: ["CI failure"] }, fix: { key: "y/ci/CI", state: "offered" }, prompt: "fix y" }], verdict: { light: "red", reasons: [] } } });
-    const items = queue(s);
-    const x = items.find((i) => i.where === "x")!;
-    expect(x.prompt).toBeUndefined();
-    expect(x.hint).toBeTruthy();
-    const y = items.find((i) => i.where === "y")!;
-    expect(y.prompt).toBe("fix y");
-    expect(y.hint).toBeUndefined();
-  });
-  test("an addon whose only stop is CI, with no release fix, still gets the repository's CI fix and prompt", () => {
+});
+
+describe("fixes and prompts", () => {
+  test("an addon whose only stop is CI keeps the repository line's CI fix and prompt", () => {
     const fix = { key: "keyring/ci/CI", state: "offered" };
-    const s = base({ releases: { addons: [{ name: "keyring", rows: [{ mark: "✗", label: "CI", text: "failure on HEAD" }], verdict: { light: "red", reasons: [] }, prompt: "p" }], repos: [{ name: "keyring", ahead: 0, behind: 0, dirty: 0, verdict: { light: "red", reasons: ["CI failure"] }, fix, prompt: "fix the CI" }], verdict: { light: "red", reasons: [] } } });
-    const row = queue(s).find((i) => i.where === "keyring")!;
+    const s = base({ releases: { addons: [addon("keyring", [{ mark: "✗", label: "CI", text: "failure on HEAD" }], { prompt: "p" })], repos: [repo("keyring", { verdict: { light: "red", reasons: ["CI failure"] }, fix, prompt: "fix the CI" })], verdict: ok } });
+    const row = queue(s).find((i) => i.who === "keyring")!;
     expect(row.fix).toEqual(fix);
     expect(row.prompt).toBe("fix the CI");
-    expect(row.hint).toBeUndefined();
   });
-  test("a tool that errors gets its source fix on the reading's row", () => {
+  test("an addon's release fix sits on its first item only", () => {
+    const fix = { key: "yonder/release/preflight" };
+    const s = base({ releases: { addons: [addon("yonder", [{ mark: "✗", label: "git", text: "x" }, { mark: "✗", label: "interface", text: "y" }], { fix })], repos: [], verdict: ok } });
+    expect(queue(s).filter((i) => i.fix)).toHaveLength(1);
+  });
+  test("an item with no fix carries no prompt to copy", () => {
+    const s = base({ releases: { addons: [addon("x", [{ mark: "!", label: "CI", text: "last run not on HEAD" }], { prompt: "p" })], repos: [], verdict: ok } });
+    expect(queue(s)[0].prompt).toBeUndefined();
+  });
+  test("a tool that errors gets its source fix on the reading's item", () => {
     const fix = { key: "addon-kit/source/status", kind: "source", page: "releases", state: "offered" };
     const s = base({ fixes: [fix], releases: { addons: [], repos: [], verdict: { light: "amber", reasons: ["status failed, showing its last answer: boom"] } } });
     expect(queue(s)[0].fix).toEqual(fix);
+  });
+  test("a failed reading on the Data page shows amber, and one never answered shows grey", () => {
+    const s = base({ data: { jobs: [], prs: [], builds: ok, errors: [], verdict: { light: "amber", reasons: ["data-prs failed, showing its last answer: boom", "latest has not answered yet"] } } });
+    expect(queue(s).map((i) => i.light)).toEqual(["amber", "grey"]);
+  });
+  test("a Classic build reason stays when launch night says Forever's", () => {
+    const s = base({ launch: { build: { light: "amber", reasons: ["forever moved"] }, infra: { reasons: [] }, sources: { reasons: [] }, addons: [] }, data: { jobs: [], prs: [], builds: { light: "amber", reasons: ["forever: 1.60.1.1 is pinned, wago.tools has 1.60.1.2", "classic: pin behind"] }, errors: [], verdict: ok } });
+    const items = queue(s);
+    expect(items.some((i) => i.who === "Classic")).toBe(true);
+    expect(items.some((i) => /newer build, 1\.60\.1\.2/.test(i.what) && i.id.startsWith("build/"))).toBe(false);
+  });
+});
+
+describe("one addon", () => {
+  test("itemsFor is only that addon's own, and the shared ones are said for it alone", () => {
+    const row = (n: string) => addon(n, [{ mark: "!", label: "review", text: "none recorded" }]);
+    const s = base({ releases: { addons: [row("a"), row("b"), row("c")], repos: [], verdict: ok } });
+    const mine = itemsFor(s, "a");
+    expect(mine).toHaveLength(1);
+    expect(mine[0].what).toBe("has commits with no review yet.");
+    expect(mine[0].addons).toBeUndefined();
   });
 });

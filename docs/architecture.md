@@ -84,15 +84,21 @@ plain page. `docs/probe.md` has the probe that decided notifications and PATH.
   dropped), `/shell/open` (https links only, to the browser) and `/shell/info`
   from the shell itself. No page ever holds the key, and the server serves no
   page at all.
-- `frontend/`: the window (redesigned 3 November 2026, `../ideas/watchtower-ux.md`).
-  `src/pages/` Overview (the queue of everything not green, red first: built in
-  the window from `/api/state` by `src/lib/queue.ts`, tested in
-  `server/queue.test.ts`), Releases (the sidebar's "Push wave"), Data, Stores,
-  Zips, Launch; `src/components/FixButton.tsx` holds `FixSlot`, the place at the
-  end of every red or amber row, and the fix button and its preview dialog;
-  `src/lib/api.tsx` polls `/api/state` every 10 s. `bun run dev` in
-  `frontend/` shows it in a browser with `bun server/control.ts --demo`
-  (`WATCHTOWER_KEY=dev`, the Vite proxy adds the key as the shell does).
+- `frontend/`: the window, in Ravenpost's look and on its parts (`index.css` is
+  Ravenpost's, and `PageHeader`, `Switch`, the panels and the toasts in
+  `src/components/ui.tsx` are its own), four pages: Overview (what to do, red
+  first, and what is not pushed yet), Addons (the nine, and a page for each:
+  its to-do items, release, store pages with the dry run, game data, launch
+  night's checks), Data (the daily jobs and the pull requests) and Launch night
+  (`../ideas/watchtower-ux.md`, `watchtower-ux2/`). The words the user reads are
+  built from `/api/state` by `src/lib/queue.ts` (tested in `server/queue.test.ts`):
+  plain sentences, an addon's name a link, a Fix button where a session could
+  start a fix (`src/components/FixButton.tsx`: `FixSlot`, the button and its
+  preview dialog). The Push wave, Stores and Test zips pages were folded into
+  these on 3 November 2026 (the evening's second round). `src/lib/api.tsx` polls
+  `/api/state` every 10 s. `bun run dev` in `frontend/` shows it in a browser
+  with `bun server/control.ts --demo` (`WATCHTOWER_KEY=dev`, the Vite proxy adds
+  the key as the shell does).
 - `server/launch/`: launch night, the page that replaced `addon-kit/launch.ts`
   (removed 3 November 2026, the evening before launch). `rules.ts` holds its
   rules and the ticks and notes file, `night.json` the checklist (data: amend

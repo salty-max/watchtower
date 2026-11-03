@@ -1,63 +1,70 @@
-import { DispatcherBar } from "@/components/FixButton";
-import { Rows } from "@/components/Row";
-import { Dot, useNow } from "@/components/ui";
+import { DispatcherBar, FixSlot } from "@/components/FixButton";
+import { NavLink, Todo } from "@/components/Row";
+import { Dot, PageHeader, Panel, useNow } from "@/components/ui";
 import { useApp } from "@/lib/api";
-import { addonIds, queue, quiet, type Item } from "@/lib/queue";
 import { ago } from "@/lib/format";
+import { num, queue, quiet, waitingToPush } from "@/lib/queue";
 
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-
-/** What is left to the launch, in words (not a ticking clock: the Launch page has the clock). */
+/** What is left to the launch, in words. */
 function untilLaunch(launch: string | undefined, now: number): string | undefined {
   if (!launch) return undefined;
   const s = Math.round((Date.parse(launch) - now) / 1000);
-  if (s <= 0) return "Forever has launched";
+  if (s <= 0) return "Forever has launched.";
   const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
-  return `Forever launches in ${d ? `${d} d ` : ""}${h} h ${m} min`;
+  return `Forever launches in ${d ? `${d} day${d === 1 ? "" : "s"} ` : ""}${h} hour${h === 1 ? "" : "s"}${d ? "" : ` ${m} minutes`}.`;
 }
 
-/** The first page: what needs the user now, red first, everything green said once at the foot. */
+const things = (n: number) => `${num(n)} ${n === 1 ? "thing" : "things"}`;
+const cap = (x: string) => x[0].toUpperCase() + x.slice(1);
+
+/** The first page: what needs doing, red first, what waits to be pushed, and a line for everything that is fine. */
 export function Overview({ go }: { go: (id: string) => void }) {
   const { state } = useApp();
   const s = state!;
   const now = useNow(60_000);
   const items = queue(s);
-  const ids = addonIds(s);
-  const red = items.filter((i) => i.light === "red");
-  const amber = items.filter((i) => i.light === "amber");
-  const grey = items.filter((i) => i.light === "grey");
+  const red = items.filter((i) => i.light === "red").length;
+  const push = waitingToPush(s);
   const q = quiet(s);
   const oldest = Math.min(...Object.values(s.ages).filter((a) => !a.paused).map((a) => a.at));
-  const head = items.length === 0 ? "Nothing needs you" : [red.length && `${red.length} in the way`, amber.length && `${amber.length} to look at`, grey.length && `${grey.length} not read`].filter(Boolean).join(", ");
-  const day = new Date(s.now).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
-  const launch = untilLaunch(s.launch?.launch, s.now);
+  const title = items.length === 0 ? "Everything is in order" : cap(red ? `${things(red)} to fix` : `${things(items.length)} to check`);
+  const intro = [untilLaunch(s.launch?.launch, s.now), red && items.length > red ? `${cap(things(items.length - red))} more to check.` : undefined].filter(Boolean).join(" ");
   return (
-    <div>
-      <h1 className="title text-[26px] leading-tight text-parchment">{head}</h1>
-      <p className="mt-1.5 text-dim">{[day, launch].filter(Boolean).join(". ")}.</p>
-      <DispatcherBar fixes={items.map((i) => i.fix)} />
-      <Band title="In the way" tone="text-blood" items={red} go={go} addons={ids} />
-      <Band title="To look at" tone="text-amber" items={amber} go={go} addons={ids} />
-      <Band title="Not read" tone="text-faint" items={grey} go={go} addons={ids} />
-      <p className="mt-8 flex items-start gap-2.5 border-t border-edge pt-3.5 text-[13px] text-faint">
-        <Dot light="green" className="mt-1" />
-        <span>
-          {items.length ? "Quiet: " : "All quiet: "}
-          {q.stores} of {q.storesOf} store pages match their files, {q.zips} of {q.zipsOf} test zips are current, {q.reposOf ? `${q.repos} of ${q.reposOf} repositories have nothing wrong` : "no repositories read"}, {q.jobs} of {q.jobsOf} daily jobs passed, {s.data.prs.length ? plural(s.data.prs.length, "pull request") + " open" : "no pull request open"}. Oldest reading {ago(oldest, now)}.
-        </span>
+    <div className="flex flex-col gap-5">
+      <PageHeader title={title} intro={intro || undefined} />
+      <DispatcherBar fixes={[...items.map((i) => i.fix), ...push.map((p) => p.fix)]} />
+      {items.length > 0 && (
+        <Panel title="To do" note="Red ones stop a release or a push. The others are worth a look first.">
+          <Todo items={items} go={go} />
+        </Panel>
+      )}
+      {push.length > 0 && (
+        <Panel title="Waiting on this computer" note="Commits and files that are not on GitHub yet.">
+          <ul className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+            {push.map((p) => (
+              <li key={p.name} className="flex items-center gap-3 py-2.5">
+                <Dot light={p.blocked ? "red" : "green"} />
+                <p className="min-w-0 flex-1 text-parchment">
+                  {p.addon ? (
+                    <NavLink to={`addon:${p.name}`} go={go} className="font-semibold">
+                      {p.who}
+                    </NavLink>
+                  ) : (
+                    <b className="font-semibold">{p.who}</b>
+                  )}{" "}
+                  has {[p.ahead > 0 && `${num(p.ahead)} commit${p.ahead === 1 ? "" : "s"} not pushed`, p.dirty > 0 && `${num(p.dirty)} uncommitted file${p.dirty === 1 ? "" : "s"}`].filter(Boolean).join(" and ")}.
+                  {p.cards.length > 0 && <span className="text-sm text-faint"> A card is working on it: {p.cards.join(", ")}.</span>}
+                </p>
+                {p.ahead > 0 && <FixSlot id={`push/${p.name}`} prompt={p.prompt} fix={undefined} alone label="Copy push prompt" />}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+      <p className="text-sm text-faint">
+        {items.length ? "Everything else is fine: " : "Nothing needs you: "}
+        {q.stores} of {q.storesOf} store pages match their files, {q.zips} of {q.zipsOf} test zips are up to date, {q.jobs} of {q.jobsOf} daily jobs passed and {s.data.prs.length ? `${num(s.data.prs.length)} pull request${s.data.prs.length === 1 ? " is" : "s are"} open` : "no pull request is open"}. The oldest reading is {ago(oldest, now)}.
       </p>
     </div>
-  );
-}
-
-function Band({ title, tone, items, go, addons }: { title: string; tone: string; items: Item[]; go: (id: string) => void; addons: string[] }) {
-  if (!items.length) return null;
-  return (
-    <section className="mt-7" aria-label={title}>
-      <h2 className="mb-1 text-[11px] font-semibold tracking-[0.12em] uppercase">
-        <span className={tone}>{title}</span> <span className="ml-1 font-mono font-normal text-faint">{items.length}</span>
-      </h2>
-      <Rows items={items} go={go} addons={addons} here="overview" />
-    </section>
   );
 }
