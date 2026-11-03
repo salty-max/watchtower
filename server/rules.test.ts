@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import * as r from "./rules";
+import { family } from "./sources";
 
 const read = <T>(name: string): T => JSON.parse(readFileSync(join(import.meta.dir, "testdata", name), "utf8"));
 const preflight = read<r.Preflight[]>("preflight.json");
@@ -20,6 +21,13 @@ describe("worst and the summary", () => {
     expect(r.worst("green", "grey")).toBe("grey");
     expect(r.worst("grey", "amber")).toBe("amber");
     expect(r.worst("amber", "red", "green")).toBe("red");
+  });
+  // (a CI checkout of this repository alone has no addon-kit beside it)
+  test.skipIf(!family())("agrees with launch night's worst on every combination", async () => {
+    const launch = await import(join(family() as string, "addon-kit", "launch-rules.ts"));
+    const all: r.Light[] = ["green", "grey", "amber", "red"];
+    for (const a of all) for (const b of all) for (const c of all) expect(r.worst(a, b, c)).toBe(launch.worst(a, b, c));
+    expect(r.worst()).toBe(launch.worst());
   });
   test("the window opens on the worst page, the first on a tie", () => {
     expect(r.summary({ releases: "green", data: "amber", stores: "red", zips: "red" })).toEqual({ overall: "red", open: "stores" });

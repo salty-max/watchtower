@@ -38,7 +38,8 @@ clone): q stamps only the repository's own check.
 - **Launch night's files are not edited until 5 November 2026 has happened**:
   `addon-kit/launch.ts`, `launch-rules.ts`, `launch-ui.ts`, `launch-page.*`,
   `launch-night.json`, `launch.test.ts`. The app only reads them
-  (`launch-rules.ts`'s `worst`). It runs no source at all between 4 November
+  (`launch-rules.ts`'s `worst` is copied in `server/rules.ts`, a test holds it
+  to the original). It runs no source at all between 4 November
   22:00 and 5 November 06:00 CET.
 - The server listens on 127.0.0.1 only, with a key per start passed by env,
   never in argv or a URL. The page never receives a store cookie or a token.

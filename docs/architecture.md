@@ -51,7 +51,7 @@ environment.
   A Pins or Game data pull request whose checks passed stays amber (a deliberate
   reading: data-prs says it was left open, so something is to be read, and the plan's
   "merging by itself = green" is not observable). A failed source after an answer is amber on its pages, one that never
-  answered grey. `worst` is launch night's own.
+  answered grey. `worst` is launch night's own, copied as two lines (CI checks this repository out alone) and held to the same answers by a test where addon-kit is beside it.
 - `server/actions.ts`: the allow-list. A store dry run (`store.ts <addon>`)
   and a card's status (four values, never running or blocked). Nothing else
   becomes a process; `actions.test.ts` holds every argv to `FORBIDDEN`.
