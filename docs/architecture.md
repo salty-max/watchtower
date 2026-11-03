@@ -142,8 +142,14 @@ session that receives reports among the live ones. `/api/state` carries a
 addon line, a job, a pull request) and the flat `fixes`, `dispatchers`,
 `dispatcher`. `--demo` starts nothing and keeps its tries in memory, with a
 made-up dispatcher. The window's button is `FixButton` (F3, in the
-window's `FixSlot`); Terminal's attach (F4) is not built on the server yet, so its
-buttons show only once a fix carries `attach`.
+window's `FixSlot`).
+
+Attach (F4): a fix whose session id is known carries `attach: "claude attach
+<id>"`, and `POST /api/fix/attach {key}` opens Terminal on it with one fixed
+`osascript` argv (the id is checked as 8 hex digits first and is the only thing
+interpolated; the first press may ask for Automation permission for Terminal).
+It lives in `fix.ts` with the rest, not in `actions.ts`. The window's Attach
+and Copy attach command buttons show once a fix carries `attach`.
 
 ## Not yet
 

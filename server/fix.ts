@@ -271,7 +271,10 @@ function writeJson(file: string, v: unknown): void {
 // ── the gates and the state ─────────────────────────────────────────────────
 export type Agent = { name?: string; sessionId?: string; id?: string; state?: string; status?: string };
 export type FixState = "offered" | "refused" | "running" | "waiting" | "ready-to-push" | "tried";
-export type FixView = { key: string; kind: Kind; repo: string; repos: string[]; title: string; page: PageId; state: FixState; reason?: string; id?: string; card?: { id: string; status: string }; again?: boolean };
+export type FixView = { key: string; kind: Kind; repo: string; repos: string[]; title: string; page: PageId; state: FixState; reason?: string; id?: string; card?: { id: string; status: string }; again?: boolean; attach?: string };
+/** A session's short id, as `claude agents` and session.ts give it: the only thing that ever reaches the attach command. */
+const SHORT_ID = /^[0-9a-f]{8}$/;
+const attachOf = (id?: string): { attach?: string } => (id && SHORT_ID.test(id) ? { attach: `claude attach ${id}` } : {});
 
 export type Ctx = {
   now: number;
@@ -305,7 +308,7 @@ export function refusal(c: Candidate, x: Ctx): string | undefined {
   const live = holding(x, c.title);
   if (rules.quiet(x.now)) {
     if (c.page === "data") return "paused until 06:00 CET (launch night)";
-    if (c.page !== "releases" || !c.repos.every((r) => x.launchRepos.has(r))) return "launch night: only the launch checklist's repositories, on the Releases page";
+    if (c.page !== "releases" || !c.repos.every((r) => x.launchRepos.has(r))) return "launch night: only the launch checklist's repositories, on the Push wave page";
     if (live.length > 0) return "launch night: one fix session at a time";
   }
   if (!pickDispatcher(x.live, x.dispatcher)) return "no dispatcher session is alive to receive the report (open one, or choose it)";
@@ -324,11 +327,11 @@ export function fixView(c: Candidate, x: Ctx): FixView {
   const agent = ours(x.agents).find((a) => a.name === c.title);
   const rec = x.records[c.key];
   const id = agent?.id ?? rec?.id;
-  if (card && card.status === "ready-to-push") return { ...base, state: "ready-to-push", id, card: { id: card.id, status: card.status } };
-  if (card && (card.status === "waiting-review" || card.status === "waiting-test" || card.status === "blocked")) return { ...base, state: "waiting", id, card: { id: card.id, status: card.status } };
-  if (card || agent) return { ...base, state: "running", id, ...(card ? { card: { id: card.id, status: card.status } } : {}) };
+  if (card && card.status === "ready-to-push") return { ...base, state: "ready-to-push", id, ...attachOf(id), card: { id: card.id, status: card.status } };
+  if (card && (card.status === "waiting-review" || card.status === "waiting-test" || card.status === "blocked")) return { ...base, state: "waiting", id, ...attachOf(id), card: { id: card.id, status: card.status } };
+  if (card || agent) return { ...base, state: "running", id, ...attachOf(id), ...(card ? { card: { id: card.id, status: card.status } } : {}) };
   // (a start too young to show an agent or a card is still booting)
-  if (rec && !rec.endedAt && x.now - rec.at < BOOT_MS) return { ...base, state: "running", id };
+  if (rec && !rec.endedAt && x.now - rec.at < BOOT_MS) return { ...base, state: "running", id, ...attachOf(id) };
   if (rec) {
     // (the session ended and the light is still red: one more try 30 minutes after it ended, or at once when the cause changed)
     const ended = rec.endedAt ?? x.now;
@@ -377,6 +380,7 @@ export class Fixer {
   live = (): Live[] => (this.o.registry ?? readRegistry)();
   private seen?: { at: number; rows: Agent[] };
   private asking?: Promise<Agent[]>;
+  private attached = new Map<string, number>();
   /** One `claude agents --json` at a time, shared by whoever asks while it runs. */
   private refresh(): Promise<Agent[]> {
     this.asking ??= this.ask()
@@ -451,6 +455,33 @@ export class Fixer {
     this.pending.set(token, { key, stamp: c.stamp, task, opener: d.sessionId, expiresAt });
     const argv = sessionArgv(c, d.sessionId, task);
     return { token, key, title: c.title, kind: c.kind, model: KINDS[c.kind].model === "prose" ? "opus" : "opusplan", repos: c.repos, prompt: task, argv: argv.slice(0, -1).concat("<the prompt above>"), reportsTo: d.name, launchLine: plan.launchLine, expiresAt };
+  }
+
+  /**
+   * Opens Terminal on `claude attach <id>` for a light's session. The id is the
+   * short one the record or `claude agents` gave, checked as 8 hex digits before
+   * it is put in a fixed AppleScript: nothing else is ever interpolated. May ask
+   * for Automation permission for Terminal the first time.
+   */
+  async attach(key: string, cells: Record<string, Cell>): Promise<{ ok: true } | { error: string }> {
+    const x = await this.ctx(cells);
+    // (the route offers what the view offers: a light that is a candidate now, with a session under way)
+    const c = candidates(cells, x.now).find((k) => k.key === key);
+    const v = c && fixView(c, x);
+    const id = v?.attach?.slice("claude attach ".length);
+    if (!v || !id || !SHORT_ID.test(id)) return { error: "that light has no session to attach to" };
+    // (one window per press: a replay or a double press within a few seconds is ignored)
+    const last = this.attached.get(key);
+    if (last !== undefined && x.now - last < 5_000) return { error: "Terminal was just opened on it" };
+    this.attached.set(key, x.now);
+    const argv = ["osascript", "-e", `tell application "Terminal" to do script "claude attach ${id}"`, "-e", 'tell application "Terminal" to activate'];
+    if (this.o.demo) {
+      this.started.push(argv);
+      return { ok: true };
+    }
+    const r = await this.o.spawn(argv, 20_000);
+    if (r.code !== 0 || r.timedOut) return { error: r.timedOut ? "Terminal did not answer" : `Terminal refused: ${r.out.trim().split("\n").slice(-1)[0]?.slice(0, 200) || "no answer"} (Automation permission for Terminal may be needed)` };
+    return { ok: true };
   }
 
   /** The second press. The token is spent first, whatever follows: a replay finds nothing. */

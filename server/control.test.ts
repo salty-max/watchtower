@@ -206,6 +206,13 @@ describe("fix sessions' routes", () => {
     expect(nul.status).toBe(400);
   });
 
+  test("attach: a light with no session is a 400, a foreign origin is refused", async () => {
+    const { h } = withFixer();
+    expect((await post(h, "/api/fix/attach", { key: "keyring/ci/CI" })).status).toBe(400);
+    expect((await post(h, "/api/fix/attach", { key: "keyring/ci/CI" }, { ...keyed, origin: "http://evil.example" })).status).toBe(403);
+    expect((await post(h, "/api/fix/attach", { key: "keyring/ci/CI" }, {})).status).toBe(403);
+  });
+
   test("the dispatcher is chosen among the live ones only", async () => {
     const { h } = withFixer();
     expect((await post(h, "/api/fix/dispatcher", { session: DISPATCH.sessionId })).status).toBe(200);

@@ -50,8 +50,9 @@ clone): q stamps only the repository's own check.
   reported range, launch night's window refused or narrowed. Log text is
   untrusted and goes only inside one nonce-fenced block of the prompt, never
   to a shell, a path or an argv word of its own. `fix.ts` is the only module
-  that may name `session.ts` (a test greps for it), and Watchtower itself never
-  pushes.
+  that may name `session.ts` or `osascript` (a test greps for both): the second
+  is the attach button's fixed AppleScript, which opens Terminal on `claude attach
+  <id>` with an id checked as 8 hex digits. Watchtower itself never pushes.
 - **Launch night is a page of the app** (the user's call, 3 November 2026,
   made final that evening): `addon-kit/launch.ts` and its files are gone, and
   Watchtower is the only launch page. Its checklist is `server/launch/night.json`

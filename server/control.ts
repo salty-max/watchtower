@@ -103,6 +103,10 @@ export function handler(deps: Deps, key: string, port: number) {
       const r = await deps.fixer.start(String(body.token ?? ""), deps.engine.cells);
       return respond(r, "error" in r ? 400 : 200);
     }
+    if (url.pathname === "/api/fix/attach" && deps.fixer) {
+      const r = await deps.fixer.attach(String(body.key ?? ""), deps.engine.cells);
+      return respond(r, "error" in r ? 400 : 200);
+    }
     if (url.pathname === "/api/fix/dispatcher" && deps.fixer) {
       const e = deps.fixer.choose(String(body.session ?? ""));
       return e ? respond({ error: e }, 400) : respond({ ok: true });

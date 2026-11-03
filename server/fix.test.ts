@@ -185,6 +185,8 @@ describe("the argv", () => {
     const files = walk(dirName).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
     const mentions = files.filter((f) => /session\.ts/.test(readFileSync(join(dirName, f), "utf8")));
     expect(mentions).toEqual(["fix.ts"]);
+    // (and so is the one place that opens Terminal)
+    expect(files.filter((f) => /osascript/.test(readFileSync(join(dirName, f), "utf8")))).toEqual(["fix.ts"]);
     // (and the allow-list keeps `session` forbidden)
     expect(FORBIDDEN).toContain("session");
   });
@@ -447,5 +449,54 @@ describe("preview, then one press", () => {
     expect(v.fixes.map((x) => [x.key, x.state])).toEqual([["keyring/ci/CI", "offered"]]);
     expect(v.dispatcher).toBe(DISPATCH.sessionId);
     expect(v.dispatchers.map((d) => d.name)).toEqual(["the-dispatch"]);
+  });
+});
+
+describe("attach (F4)", () => {
+  const rec = { title: "Fix: keyring ci CI", at: NOON - 60 * 60_000, stamp: "s", repos: ["keyring"], id: "abc12345" };
+  test("a session's fix carries `claude attach <id>`, only for a short hex id", () => {
+    const c = first();
+    expect(fixView(c, ctx({ agents: [{ name: c.title, id: "abc12345" }] })).attach).toBe("claude attach abc12345");
+    expect(fixView(c, ctx({ agents: [{ name: c.title, id: "abc12345; rm -rf ~" }] })).attach).toBeUndefined();
+    expect(fixView(c, ctx({ agents: [{ name: c.title }] })).attach).toBeUndefined();
+    expect(fixView(c, ctx()).attach).toBeUndefined();
+  });
+  const live = (id = "abc12345") => ({ agents: async () => [{ name: "Fix: keyring ci CI", id }] });
+  test("the attach runs one fixed AppleScript with the validated id, and nothing the caller sent", async () => {
+    const r = await fixer(live()).attach("keyring/ci/CI", cellsWith());
+    expect(r).toEqual({ ok: true });
+    expect(ran).toEqual([["osascript", "-e", 'tell application "Terminal" to do script "claude attach abc12345"', "-e", 'tell application "Terminal" to activate']]);
+  });
+  test("a second press within five seconds is ignored, a later one opens again", async () => {
+    const f = fixer(live());
+    await f.attach("keyring/ci/CI", cellsWith());
+    expect(await f.attach("keyring/ci/CI", cellsWith())).toMatchObject({ error: "Terminal was just opened on it" });
+    clock += 6_000;
+    expect(await f.attach("keyring/ci/CI", cellsWith())).toEqual({ ok: true });
+    expect(ran.length).toBe(2);
+  });
+  test("only what the view offers: no session, an ended one, a light gone green, an odd id, an unknown key", async () => {
+    expect(await fixer().attach("keyring/ci/CI", cellsWith())).toMatchObject({ error: "that light has no session to attach to" });
+    // (a record of an ended session)
+    writeFileSync(join(dir, "fixes.json"), JSON.stringify({ "keyring/ci/CI": { ...rec, endedAt: NOON - 60_000 } }));
+    expect(await fixer().attach("keyring/ci/CI", cellsWith())).toMatchObject({ error: expect.stringContaining("no session") });
+    // (a live one whose light has since gone green)
+    expect(await fixer(live()).attach("keyring/ci/CI", cellsWith({ status: cell([]) }))).toMatchObject({ error: expect.stringContaining("no session") });
+    expect(await fixer(live('1" & do shell script "x')).attach("keyring/ci/CI", cellsWith())).toMatchObject({ error: expect.stringContaining("no session") });
+    expect(await fixer(live()).attach("../../x", cellsWith())).toMatchObject({ error: expect.stringContaining("no session") });
+    expect(ran).toEqual([]);
+  });
+  test("Terminal refusing says so, and an empty answer still says something", async () => {
+    spawnOut = { out: "execution error: Not authorised to send Apple events to Terminal. (-1743)", code: 1, timedOut: false };
+    expect(await fixer(live()).attach("keyring/ci/CI", cellsWith())).toMatchObject({ error: expect.stringContaining("Automation permission") });
+    spawnOut = { out: "", code: 1, timedOut: false };
+    expect(await fixer(live()).attach("keyring/ci/CI", cellsWith())).toMatchObject({ error: expect.stringContaining("no answer") });
+  });
+  test("the demo spawns nothing", async () => {
+    const f = fixer({ demo: true });
+    const p = (await f.preview("keyring/ci/CI", cellsWith())) as { token: string };
+    await f.start(p.token, cellsWith());
+    expect(await f.attach("keyring/ci/CI", cellsWith())).toMatchObject({ error: "that light has no session to attach to" });
+    expect(ran).toEqual([]);
   });
 });
