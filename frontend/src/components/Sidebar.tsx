@@ -19,7 +19,7 @@ export function Sidebar({ page, go }: { page: string; go: (id: string) => void }
   return (
     <aside className="drag flex w-48 shrink-0 flex-col border-r border-edge pt-12 max-md:w-40">
       <div className="flex items-center gap-2.5 px-5 pb-6">
-        <img src="/icon.png" alt="" width={28} height={28} className="size-7 rounded-md" />
+        <img src="/icon.png" alt="" width={32} height={32} className="size-8 rounded-md" />
         <p className="title text-[17px] leading-tight">Watchtower</p>
       </div>
       <nav className="no-drag flex flex-col" aria-label="Watchtower">

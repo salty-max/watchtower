@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" alt="Watchtower: a stone tower with a lit lantern" width="160"></p>
+
 # Watchtower
 
 The addon family's control centre: a menu-bar app on the author's Mac that
