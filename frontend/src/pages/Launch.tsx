@@ -1,6 +1,6 @@
 import { Check, ClipboardCopy, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Chip, Chips, Dot, Modal, Reasons, useNow } from "@/components/ui";
+import { Dot, Modal, Reasons, useNow } from "@/components/ui";
 import { call, useApp, type Dict, type Light } from "@/lib/api";
 import { ago, hhmm, when, WORD } from "@/lib/format";
 
@@ -17,15 +17,11 @@ export function Launch() {
   const { state, refreshAll, toast } = useApp();
   const L = state!.launch as Dict;
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-7">
       <Band L={L} onRefresh={refreshAll} />
-      <div className="grid grid-cols-1 gap-5 2xl:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="flex min-w-0 flex-col gap-3" aria-label="The nine addons">
-          {L.addons.map((a: Dict) => (
-            <AddonCard key={a.id} a={a} />
-          ))}
-        </div>
-        <div className="flex min-w-0 flex-col gap-4">
+      <div className="grid grid-cols-1 gap-x-9 gap-y-8 lg:grid-cols-[minmax(0,1fr)_21rem]">
+        <Addons L={L} />
+        <div className="flex min-w-0 flex-col gap-7">
           <Timeline L={L} />
           <Systems L={L} toast={toast} />
           <Notes L={L} />
@@ -39,8 +35,8 @@ export function Launch() {
 
 function Box({ title, age, children }: { title: string; age?: string; children: React.ReactNode }) {
   return (
-    <section className="panel px-4 py-3.5">
-      <h2 className="mb-3 flex items-baseline justify-between gap-3 text-xs font-semibold tracking-[0.12em] text-faint uppercase">
+    <section className="border-t border-edge pt-3">
+      <h2 className="mb-3 flex items-baseline justify-between gap-3 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">
         {title}
         {age && <span className="text-[11px] font-normal tracking-normal normal-case">{age}</span>}
       </h2>
@@ -60,7 +56,7 @@ function Clock({ launch, serverNow }: { launch: string; serverNow: number }) {
   const h = Math.floor((a % 86400) / 3600);
   return (
     <div>
-      <p className="title text-[26px] leading-none tabular-nums">{`T${s < 0 ? "−" : "+"}${days ? `${days}d ` : ""}${days ? p(h) : h}:${p(Math.floor((a % 3600) / 60))}:${p(a % 60)}`}</p>
+      <p className="title text-[44px] leading-none tabular-nums">{`T${s < 0 ? "−" : "+"}${days ? `${days}d ` : ""}${days ? p(h) : h}:${p(Math.floor((a % 3600) / 60))}:${p(a % 60)}`}</p>
       <p className="mt-1.5 text-xs text-faint">Launch {when(launch)}</p>
     </div>
   );
@@ -75,30 +71,25 @@ function Band({ L, onRefresh }: { L: Dict; onRefresh: () => void }) {
   const [title, sub, tone] = VERDICT[L.overall as Light];
   const detail = sub || `${[red && `${red} red`, amber && `${amber} amber`].filter(Boolean).join(", ")} below.`;
   return (
-    <section className="panel relative flex flex-wrap items-center justify-between gap-5 overflow-hidden px-6 py-5">
-      <div aria-hidden className="pointer-events-none absolute -top-16 -left-10 size-56 rounded-full bg-gold/10 blur-3xl" />
-      <div className="relative">
-        <Clock launch={L.launch} serverNow={s.now} />
+    <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 border-b border-edge pb-6">
+      <Clock launch={L.launch} serverNow={s.now} />
+      <div className="min-w-0 flex-1 basis-72">
+        <h1 className={`title flex items-center gap-3 text-[22px] leading-tight ${tone}`}>
+          <Dot light={L.overall} />
+          {title}
+        </h1>
+        <p className="mt-1 text-dim">{detail}</p>
       </div>
-      <div className="relative flex min-w-0 flex-1 items-center gap-4">
-        <span aria-hidden className={`grid size-12 shrink-0 place-items-center rounded-full border-2 ${tone} bg-current/10`}>
-          <span className="size-5 rounded-full bg-current" />
-        </span>
-        <div className="min-w-0">
-          <h1 className={`title text-[22px] leading-tight ${tone}`}>{title}</h1>
-          <p className="text-dim">{detail}</p>
-        </div>
-      </div>
-      <div className="relative flex flex-col items-end gap-2.5">
+      <div className="flex flex-col items-end gap-2.5">
         <p className="flex gap-4 text-xs text-faint">
           <span>
-            Forever pin <b className="font-semibold text-parchment select-text">{L.build.pin ?? "?"}</b>
+            Forever pin <b className="font-mono font-semibold text-parchment select-text">{L.build.pin ?? "?"}</b>
           </span>
           <span>
-            wago.tools <b className="font-semibold text-parchment select-text">{L.build.latest ?? "?"}</b>
+            wago.tools <b className="font-mono font-semibold text-parchment select-text">{L.build.latest ?? "?"}</b>
           </span>
           <span>
-            TOCs <b className="font-semibold text-parchment select-text">{L.build.toc}</b>
+            TOCs <b className="font-mono font-semibold text-parchment select-text">{L.build.toc}</b>
           </span>
         </p>
         <button type="button" className="btn btn-gold" onClick={onRefresh} disabled={s.busy.length > 0}>
@@ -109,72 +100,95 @@ function Band({ L, onRefresh }: { L: Dict; onRefresh: () => void }) {
   );
 }
 
-function AddonCard({ a }: { a: Dict }) {
+/** The nine addons in the checklist's order, each folded to one line (readiness, version, CI, zip, in-game count): the first that is not green starts open. */
+function Addons({ L }: { L: Dict }) {
+  // (until the user opens or closes a row, the open one follows the readings: the first that is not green)
+  const [touched, setTouched] = useState<string[]>();
+  const open = touched ?? (L.addons as Dict[]).filter((a) => a.light !== "green").slice(0, 1).map((a) => a.id);
+  const setOpen = (next: string[]) => setTouched(next);
+  const all = open.length === L.addons.length;
+  return (
+    <section aria-label="The nine addons" className="min-w-0">
+      <h2 className="mb-1 flex items-baseline justify-between text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">
+        <span>The nine addons, in launch order</span>
+        <button type="button" className="rounded px-1.5 py-0.5 text-[11px] font-normal tracking-normal normal-case hover:text-parchment" onClick={() => setOpen(all ? [] : (L.addons as Dict[]).map((a) => a.id))}>
+          {all ? "Close all" : "Open all"}
+        </button>
+      </h2>
+      <ol className="border-b border-edge">
+        {(L.addons as Dict[]).map((a) => (
+          <AddonRow key={a.id} a={a} shown={open.includes(a.id)} toggle={() => setOpen(open.includes(a.id) ? open.filter((y) => y !== a.id) : [...open, a.id])} />
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function AddonRow({ a, shown, toggle }: { a: Dict; shown: boolean; toggle: () => void }) {
   const { change, copy } = useApp();
   const done = a.checks.filter((c: Dict) => c.tick === "ok").length;
   const game = a.inGame.light === "grey" ? "not tested" : a.inGame.light === "red" ? "broken" : `${done}/${a.checks.length} ok`;
-  const edge = { green: "border-l-ok", amber: "border-l-amber", red: "border-l-blood", grey: "border-l-faint" }[a.light as Light];
+  const tone = (l: Light) => ({ green: "text-ok", amber: "text-amber", red: "text-blood", grey: "text-faint" })[l];
+  const zip = a.zip && (a.zip.mark === "✓" ? ["zip current", "text-faint"] : /^none/.test(a.zip.text) ? ["no zip", "text-blood"] : ["zip behind", "text-amber"]);
   return (
-    <article id={`card-${a.id}`} className={`panel border-l-[3px] px-5 py-4 ${edge}`}>
-      <div className="flex items-center gap-3">
-        <span className="grid size-6 shrink-0 place-items-center rounded-full border border-edge text-xs text-faint">{a.rank}</span>
-        <h3 className="min-w-0 flex-1 text-[15px] font-semibold text-parchment">
-          {a.name}
-          <span className="ml-2 font-mono text-xs font-normal text-faint select-text">{a.slash}</span>
-        </h3>
-        <Dot light={a.light} />
+    <li id={`card-${a.id}`} className="border-t border-edge">
+      <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-0.5 py-2.5">
+        <button type="button" aria-expanded={shown} aria-controls={`body-${a.id}`} onClick={toggle} className="flex min-w-[13rem] items-center gap-4 text-left">
+          <span className="w-4 text-right font-mono text-xs text-faint">{a.rank}</span>
+          <Dot light={a.light} />
+          <span className="font-semibold text-parchment">{a.name}</span>
+        </button>
+        <span className="font-mono text-xs text-faint select-text">{a.slash}</span>
+        <span className={`text-[13px] ${tone(a.readiness.light)}`}>{WORD[a.readiness.light as Light]}</span>
+        {a.version && <span className="font-mono text-xs text-faint select-text">v{a.version}</span>}
+        {a.ci && <span className={`text-xs ${a.ci === "success" ? "text-faint" : "text-blood"}`}>CI {a.ci === "success" ? "✓" : a.ci}</span>}
+        {zip && <span className={`text-xs ${zip[1]}`} title={a.zip.text}>{zip[0]}</span>}
+        <span className={`ml-auto text-xs ${a.inGame.light === "grey" ? "text-faint" : tone(a.inGame.light)}`}>in game: {game}</span>
       </div>
-      <Chips>
-        <Chip light={a.readiness.light}>{WORD[a.readiness.light as Light]}</Chip>
-        {a.version && <Chip>v{a.version}</Chip>}
-        {a.ci && <Chip light={a.ci === "success" ? "green" : "red"}>CI {a.ci === "success" ? "✓" : a.ci}</Chip>}
-        {a.zip && (
-          <Chip light={a.zip.mark === "✓" ? "green" : "amber"} title={a.zip.text}>
-            {a.zip.mark === "✓" ? "zip current" : /^none/.test(a.zip.text) ? "no zip" : "zip behind"}
-          </Chip>
-        )}
-        <Chip light={a.inGame.light === "grey" ? undefined : a.inGame.light}>in game: {game}</Chip>
-      </Chips>
-      <Reasons v={a.readiness} />
-      <ul className="mt-3 flex flex-col divide-y divide-edge/70 border-t border-edge/70">
-        {a.checks.map((c: Dict) => (
-          <li key={c.id} className="py-2.5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-parchment select-text">{c.look}</p>
-                <p className="mt-0.5 text-[13px] text-faint select-text">{c.ok}</p>
-              </div>
-              <div role="group" aria-label={c.look} className="flex shrink-0 overflow-hidden rounded-lg border border-edge">
-                {(["ok", "broken"] as const).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    aria-pressed={c.tick === v}
-                    onClick={() => change({ op: "tick", key: `${a.id}/${c.id}`, value: c.tick === v ? "untested" : v })}
-                    className={`h-8 px-3 text-[13px] transition-colors ${c.tick === v ? (v === "ok" ? "bg-ok/20 text-ok" : "bg-blood/20 text-blood") : "bg-stone-2 text-dim hover:text-parchment"}`}
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {c.tick === "broken" && (
-              <div className="mt-2 rounded-lg border border-blood/30 bg-blood/5 px-3 py-2 text-[13px] text-dim select-text">
-                <b className="text-parchment">If it's broken:</b> {c.todo}
-                <p className="mt-1 text-faint">Fixed by: {c.fix}</p>
-                <button type="button" className="btn btn-ghost mt-1.5 h-7 px-2 text-xs" onClick={() => copy(`${a.name}: ${c.look}: `, "Copied: it starts a note")}>
-                  Copy a note start
-                </button>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-      <p className="mt-2 text-[13px] text-faint select-text">{a.risk}</p>
-      <div className="mt-3 flex gap-2">
-        <StoreDry repo={a.id} />
-      </div>
-    </article>
+      {shown && (
+        <div id={`body-${a.id}`} className="pb-4 pl-8">
+          <Reasons v={a.readiness} />
+          <ul className="mt-3 flex flex-col divide-y divide-edge/70 border-t border-edge/70">
+            {a.checks.map((c: Dict) => (
+              <li key={c.id} className="py-2.5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-parchment select-text">{c.look}</p>
+                    <p className="mt-0.5 text-[13px] text-faint select-text">{c.ok}</p>
+                  </div>
+                  <div role="group" aria-label={c.look} className="flex shrink-0 overflow-hidden rounded-md border border-edge">
+                    {(["ok", "broken"] as const).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        aria-pressed={c.tick === v}
+                        onClick={() => change({ op: "tick", key: `${a.id}/${c.id}`, value: c.tick === v ? "untested" : v })}
+                        className={`h-8 px-3 text-[13px] transition-colors ${c.tick === v ? (v === "ok" ? "bg-ok/20 text-ok" : "bg-blood/20 text-blood") : "bg-stone-2 text-dim hover:text-parchment"}`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {c.tick === "broken" && (
+                  <div className="mt-2 border-l-2 border-blood pl-3 text-[13px] text-dim select-text">
+                    <b className="text-parchment">If it's broken:</b> {c.todo}
+                    <p className="mt-1 text-faint">Fixed by: {c.fix}</p>
+                    <button type="button" className="btn btn-ghost mt-1.5 h-7 px-2 text-xs" onClick={() => copy(`${a.name}: ${c.look}: `, "Copied: it starts a note")}>
+                      Copy a note start
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[13px] text-faint select-text">{a.risk}</p>
+          <div className="mt-3 flex gap-2">
+            <StoreDry repo={a.id} />
+          </div>
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -205,6 +219,15 @@ function StoreDry({ repo }: { repo: string }) {
   );
 }
 
+/** T−1h 30m, T, T+2h: a step's time against the launch's. */
+function tMark(at: string, launch: string): string {
+  const m = Math.round((Date.parse(at) - Date.parse(launch)) / 60000);
+  if (m === 0) return "T";
+  const a = Math.abs(m);
+  const d = Math.floor(a / 1440), h = Math.floor((a % 1440) / 60), r = a % 60;
+  return `T${m < 0 ? "−" : "+"}${[d && `${d}d`, h && `${h}h`, r && `${r}m`].filter(Boolean).join(" ")}`;
+}
+
 function Timeline({ L }: { L: Dict }) {
   const { change } = useApp();
   return (
@@ -215,6 +238,7 @@ function Timeline({ L }: { L: Dict }) {
             <input type="checkbox" className="mt-1 size-4 shrink-0 accent-[#c9a227]" checked={t.done} onChange={(e) => change({ op: "step", id: t.id, done: e.target.checked })} aria-label={t.title} />
             <div className="min-w-0">
               <p className={`text-xs ${t.next ? "text-gold" : "text-faint"}`}>
+                <span className="mr-2 font-mono">{tMark(t.at, L.launch)}</span>
                 {when(t.at)}
                 {t.next ? " · next" : ""}
               </p>

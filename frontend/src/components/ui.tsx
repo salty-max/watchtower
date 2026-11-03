@@ -53,19 +53,6 @@ export function Said({ children }: { children: ReactNode }) {
   return <p className="mt-1.5 text-[13px] text-dim select-text">{children}</p>;
 }
 
-export function Chips({ children }: { children: ReactNode }) {
-  return <div className="mt-2.5 flex flex-wrap gap-1.5">{children}</div>;
-}
-
-export function Chip({ children, light, title }: { children: ReactNode; light?: Light; title?: string }) {
-  const tone = light ? { green: "border-ok/40 text-ok", amber: "border-amber/45 text-amber", red: "border-blood/55 text-blood", grey: "" }[light] : "";
-  return (
-    <span title={title} className={`tag ${tone}`}>
-      {children}
-    </span>
-  );
-}
-
 /** Why a light is what it is. */
 export function Reasons({ v }: { v: Verdict }) {
   if (!v.reasons.length) return null;
