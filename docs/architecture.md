@@ -157,6 +157,49 @@ interpolated; the first press may ask for Automation permission for Terminal).
 It lives in `fix.ts` with the rest, not in `actions.ts`. The window's Attach
 and Copy attach command buttons show once a fix carries `attach`.
 
+## Refreshing on events (4 November 2026)
+
+The timers in `engine.ts` are the safety net. On top of them the server reads a
+source the moment something it depends on changes (`server/live.ts` wires it,
+started by `control.ts` in serve mode only, not `--demo` or `--once`).
+
+- `server/watch.ts`: folders watched with `fs.watch`, each with a test for the file
+  names that count and the sources to read. A folder that can't be watched
+  (iCloud Drive without the app's permission) is logged once and left to the timers.
+- `server/ci.ts`: a cheap look at each repository's newest five CI runs (`gh run
+  list`, one call each). A repository is looked at 20 s after its refs moved, every 45 s while a run is
+  going and every 10 minutes otherwise. A repository that fails waits 5 minutes and the
+  others go on. A rate limit or a timeout pauses the whole poll for 5 minutes, doubling to 30, and a good
+  answer ends the pause. The poll itself runs through launch night's window (releases matter most
+  then), while the readings it causes are the engine's to allow or pause.
+  The first look only sets what later ones are compared with.
+- `server/react.ts`: decides when. A quiet moment of 1.5 s (a commit writes several
+  files, at most 15 s of waiting under a steady stream), then the source's gap since its
+  last event-driven reading (board and zips 5 s, status 20 s, latest and data-prs
+  60 s, preflight 3 min), never while the source is being read (the change waits
+  for the flight, then gets its own reading). `Engine.refresh` still has the one flight
+  per source, the disk cache and launch night's window: an event in the window
+  reads only what the window lets through, like a timer does.
+
+| Event | Where it comes from | Sources read |
+|---|---|---|
+| A branch, tag or HEAD moves in a repository (commit, checkout, pull, push, fetch) | that repository's `.git/HEAD`, `packed-refs`, `refs/**` (git renames a `.lock` file into place and the watcher hears the lock's name, which counts; a remote's own `HEAD` doesn't, as every fetch touches it) | status, preflight, board (unpushed commits name cards) |
+| A card is written or moved | `board/*.md` | board, status |
+| A test zip lands or goes | the iCloud `WoW addons test` folder, `*.zip` and iCloud's `*.zip.icloud` placeholders | zips, status (the build stamps) |
+| The game's pins move | `wow-data/pins.json` | latest |
+| A CI run starts or ends | `ci.ts` | status and data-prs, and preflight when one ends |
+
+Not on events: the **store pages** (they use the user's cookies, so only their
+30-minute timer reads them), the **launch night readings** (their own timers),
+and a **file edited in a working tree** (no event in `.git` sees it, the status
+timer does). The index is not watched on purpose: `git status`, which the status
+tool runs, may rewrite it, and the watcher would wake itself.
+
+Nothing here writes: the watchers only listen, the CI look is a `gh run list`
+with no word `forbidden()` knows, and the window still polls `/api/state` every
+10 s, so a change shows within a few seconds of the reading that follows it.
+Each event-driven reading is logged as `watch: <source>: <why>` in the server log.
+
 ## Not yet
 
 Notifications, quiet hours, mutes and launch at login (M3).

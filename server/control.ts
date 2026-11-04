@@ -27,8 +27,9 @@ import * as night from "./launch/rules";
 import { DiskCache } from "./cache";
 import { Engine, exec as realExec, toolDefs, type Cell, type Def, type Exec } from "./engine";
 import { action, pullArgv, pullRefusal, REPO_NAME, safe, statusArgv } from "./actions";
-import { forbidden } from "./sources";
+import { family, forbidden } from "./sources";
 import { attach, Fixer, type Live } from "./fix";
+import { startLive } from "./live";
 import { view } from "./view";
 import { listZips } from "./zips";
 
@@ -180,7 +181,12 @@ if (import.meta.main) {
     process.stdout.write(notesMarkdown(night.readState(deps.night!.stateFile), content));
   } else {
     if (demo) await Promise.all(engine.sources().map((s) => engine.refresh(s)));
-    else engine.start();
+    else {
+      engine.start();
+      // (the timers stay as the safety net: a change on this computer or a CI run ending reads its sources at once)
+      const root = family();
+      if (root) startLive({ engine, root, run: realExec, log: (l) => console.log(l) });
+    }
     const key = process.env.WATCHTOWER_KEY || randomBytes(18).toString("base64url");
     let h: (r: Request) => Promise<Response>;
     const server = Bun.serve({ hostname: "127.0.0.1", port: Number(process.env.WATCHTOWER_PORT ?? 4192), fetch: (r) => h(r), idleTimeout: 255 });

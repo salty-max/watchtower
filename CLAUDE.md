@@ -20,6 +20,7 @@ its section 9).
 | Run the server (`--demo` first) | `bun watchtower/server/control.ts [--demo]` from the family folder |
 | The lights' rules, the allow-list | `server/rules.ts`, `server/actions.ts` (tests beside them) |
 | Fix sessions from a red light (preview, one press, gates) | `server/fix.ts`, `../ideas/watchtower-fix-sessions.md` |
+| Refreshing on events (files watched, CI look, when a reading runs) | `server/live.ts`, `watch.ts`, `ci.ts`, `react.ts`, `docs/architecture.md` |
 | The tools it reads (argv lists, `--json`, the words that may never appear) | `server/sources.ts`, `server/sources.test.ts` |
 | The tools' JSON (additive, their Markdown unchanged) | `../addon-kit/data-prs.ts`, `store.ts`, `preflight.ts`, `status.ts`, `board.ts` and `../wow-data/bin/latest.ts` |
 
