@@ -1,0 +1,21 @@
+/* What only the phone app needs on top of the shared look: the page scrolls as a page (a phone's address bar and pull to refresh want that), text can be chosen. */
+html {
+  font-size: 16px; /* (rem stays 16 px, so Tailwind's sizes are the sizes they say: nothing under 12 px) */
+}
+html,
+body {
+  margin: 0;
+  background: var(--color-night);
+  color: var(--color-parchment);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  font-size: 14px;
+}
+@media (max-width: 639px) {
+  body {
+    font-size: 15px;
+  }
+}
