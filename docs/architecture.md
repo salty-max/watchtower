@@ -251,3 +251,10 @@ The pull button: a row whose only trouble is that its branch is behind origin ge
 `git status --porcelain --branch` first and refuses, in words, a dirty tree, a commit not
 pushed, no upstream or no branch, and a repository a running card holds, and only then runs `git pull --ff-only` in that
 repository.
+
+## The shared pages and the phone app (6 November 2026, M2 of `ideas/watchtower-inbox.md`)
+
+`frontend/` is one React app in two modes: the window above, and the phone app served by the inbox at
+`/stats/next`. The pages, the look and the owner API's schemas are in `frontend/src/shared/`, the phone's shell
+in `frontend/src/pwa/`, and `scripts/ui-sync.ts` writes the built phone app, stamped, into the inbox. All of it
+in `docs/shared-ui.md`.

@@ -16,6 +16,7 @@ its section 9).
 | What exists, file by file | `docs/architecture.md` |
 | The M2 probe (notifications, PATH) | `docs/probe.md` |
 | The window (React, as Ravenpost) | `frontend/` |
+| The shared pages and the phone app (the second build mode of `frontend/`, served by the inbox at `/stats/next`), the stamped copy into the inbox | `docs/shared-ui.md`, `frontend/src/shared/`, `scripts/ui-sync.ts` |
 | Launch night inside the app | `server/launch/` |
 | Run the server (`--demo` first) | `bun watchtower/server/control.ts [--demo]` from the family folder |
 | The lights' rules, the allow-list | `server/rules.ts`, `server/actions.ts` (tests beside them) |
@@ -27,7 +28,8 @@ its section 9).
 ## Commands
 
 ```bash
-bash scripts/check.sh                                          # tsc, bun test server, the window's build, gofmt, vet, go test
+bash scripts/check.sh                                          # tsc, the window's build, the shared pages and phone app tests (Chrome), the inbox copy current, bun test server, gofmt, vet, go test
+bun scripts/ui-sync.ts                                         # after a change to the shared pages: builds the phone app into ../ravenpost/inbox, stamped (then a commit there)
 scripts/build.sh                                               # Watchtower.app into /Applications (the window in a browser: bun run dev in frontend/, with the server --demo)
 bun ../addon-kit/q.ts check -- bash scripts/check.sh           # the same, quiet, stamping the tree for the push (harness.check)
 ```
@@ -72,6 +74,7 @@ clone): q stamps only the repository's own check.
   added there, additive and tested, never parsed out of their Markdown. The
   harness copies in addon-kit (`status.ts`, `board.ts`) change in
   `../harness` only.
+- The shared pages in `frontend/src/shared/` name no light, fix or pull (the phone has none); the inbox's copy of the phone app is never edited by hand (`ui-sync.ts --check`). Every word the owner reads there says Watchtower.
 - English is British. No semicolons in text the user reads.
 - Conventional Commits, lowercase subjects, no AI trailers (the commit-msg
   hook refuses them). Commit locally, ask before any push, and before the
