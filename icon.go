@@ -9,6 +9,9 @@ import (
 	"math"
 )
 
+// trayPx is the menu-bar icon's side, in pixels.
+const trayPx = 44
+
 // The lights' colours, as the page's beacon has them.
 var lightColours = map[string]color.NRGBA{
 	"green": {0x4c, 0xb0, 0x6a, 0xff},
@@ -24,30 +27,43 @@ func lightColour(light string) color.NRGBA {
 	return lightColours["grey"]
 }
 
-// tower draws a watchtower on an n×n canvas: a tapering shaft, a wider
-// lantern room on top, a doorway cut at the foot. in reports whether the point
-// (in 0..1) is part of the tower.
-func tower(fx, fy float64) bool {
-	switch {
-	case fy >= 0.2 && fy < 0.34: // the lantern room
-		return fx >= 0.3 && fx <= 0.7
-	case fy >= 0.34 && fy < 0.4: // the gallery
-		return fx >= 0.24 && fx <= 0.76
-	case fy >= 0.4 && fy <= 0.9: // the shaft
-		half := 0.14 + (fy-0.4)*0.16
-		if fy > 0.76 && fx >= 0.45 && fx <= 0.55 {
-			return false // the doorway
-		}
-		return math.Abs(fx-0.5) <= half
+// trayMask is the owl as the menu-bar icon cuts it out: 176 px, white where the owl is
+// (scripts/tray.sh makes it from the painting, the eyes left black).
+//
+//go:embed assets/tray-mask.png
+var trayMaskPNG []byte
+
+var trayMask = func() image.Image {
+	img, err := png.Decode(bytes.NewReader(trayMaskPNG))
+	if err != nil {
+		panic(err)
 	}
-	return false
+	if b := img.Bounds(); b.Dx() != b.Dy() || b.Dx()%trayPx != 0 {
+		panic("assets/tray-mask.png must be square, a multiple of 44 px")
+	}
+	return img
+}()
+
+// owlCover is how much of the pixel (x, y) of an n×n icon the owl covers, 0 to 1: the
+// mask's block of pixels under it, averaged.
+func owlCover(x, y, n int) float64 {
+	b := trayMask.Bounds()
+	step := b.Dx() / n
+	var sum float64
+	for dy := 0; dy < step; dy++ {
+		for dx := 0; dx < step; dx++ {
+			r, _, _, _ := trayMask.At(b.Min.X+x*step+dx, b.Min.Y+y*step+dy).RGBA()
+			sum += float64(r) / 0xffff
+		}
+	}
+	return sum / float64(step*step)
 }
 
-// trayIcon is the menu-bar icon: the light's colour as a disc, the tower
-// cut out of it (so it reads on a light and a dark menu bar), 44 px for a
-// retina bar (the system scales it to the bar's height).
+// trayIcon is the menu-bar icon: the light's colour as a disc, the owl cut out of it
+// (so it reads on a light and a dark menu bar), 44 px for a retina bar (the system
+// scales it to the bar's height).
 func trayIcon(light string) []byte {
-	const n = 44
+	const n = trayPx
 	img := image.NewNRGBA(image.Rect(0, 0, n, n))
 	c := lightColour(light)
 	for y := 0; y < n; y++ {
@@ -56,9 +72,7 @@ func trayIcon(light string) []byte {
 			if math.Hypot(fx-0.5, fy-0.5) > 0.48 {
 				continue
 			}
-			if tower(fx, fy) {
-				continue
-			}
+			c.A = uint8(math.Round(255 * (1 - owlCover(x, y, n))))
 			img.SetNRGBA(x, y, c)
 		}
 	}

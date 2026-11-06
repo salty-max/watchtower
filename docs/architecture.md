@@ -226,13 +226,15 @@ never a fresh green. A cached one inside its interval keeps its verdict, with
 
 ## The icons
 
-The app's icon is the painted logo (`assets/`) on macOS' icon grid:
-`scripts/icon.sh` makes `assets/app-icon.png` (1024 px, the `.icns`' source in
-`scripts/build.sh`) and `assets/app-icon-512.png` (embedded by `icon.go`, the
-Dock's). The menu-bar icon stays a status-coloured disc with a tower cut out
-(`icon.go`): the colour is the information, and the painting loses its detail at 16
-to 22 px. The window's mark and favicon are `frontend/public/icon.png`, the 64 px
-export.
+The logo is the painted sentinel owl (`assets/`, see its README). The app's icon is
+the painting on macOS' icon grid: `scripts/icon.sh` makes `assets/app-icon.png`
+(1024 px, the `.icns`' source in `scripts/build.sh`) and `assets/app-icon-512.png`
+(embedded by `icon.go`, the Dock's). The menu-bar icon stays a status-coloured disc
+(`icon.go`) with the owl's silhouette cut out of it and the eyes left in the disc's
+colour: the colour is the information, and the painting loses its detail at 16 to
+22 px. The silhouette is `assets/tray-mask.png`, made from the painting by
+`scripts/tray.sh`. The window's mark and favicon are `frontend/public/icon.png`, the
+64 px export.
 
 ## Before launch, and the pull
 

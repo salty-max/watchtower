@@ -8,7 +8,7 @@ node_modules/
 /frontend/dist/*
 !/frontend/dist/.gitkeep
 /frontend/node_modules/
-# derived small exports of the logo (assets/README.md): made with ImageMagick from logo-1024.png when needed
+# derived small exports of the logo (assets/README.md): made with ImageMagick from logo-master.png when needed
 /assets/logo-256.png
 /assets/logo-64.png
 /assets/logo-32.png

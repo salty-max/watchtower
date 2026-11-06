@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/logo.png" alt="Watchtower: a gold lookout lantern with a teal watchfire" width="160"></p>
+<p align="center"><img src="assets/logo.png" alt="Watchtower: a painted sentinel owl with turquoise eyes" width="160"></p>
 
 # Watchtower
 
@@ -20,7 +20,7 @@ icon, and starts the Bun server in the family folder as its child, so that
 folder and `bun` must stay where they are.
 
 - **Open it**: Spotlight (⌘-Space, "Watchtower"), or Finder's sidebar,
-  Applications. Its icon sits in the menu bar (a tower, coloured by
+  Applications. Its icon sits in the menu bar (an owl, coloured by
   the worst light) and the window opens on the Overview. Closing the window
   hides it, and the menu bar icon's menu has Open, Refresh all and Quit.
 - **Keep it in the Dock**: while it is open its icon shows in the Dock (it

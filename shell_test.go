@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"image/png"
 	"io"
 	"net"
 	"net/http"
@@ -193,5 +195,25 @@ func TestLoginPathKeepsTheCurrentOne(t *testing.T) {
 	}
 	if seen["/somewhere/odd"] != 1 || seen["/usr/bin"] != 1 {
 		t.Fatalf("path %s", p)
+	}
+}
+
+// The owl is cut out of the disc: its middle is clear, a pixel of its eye is the light's colour.
+func TestTrayOwlCutOut(t *testing.T) {
+	img, err := png.Decode(bytes.NewReader(trayIcon("green")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, _, a := img.At(22, 26).RGBA()
+	if a > 0x2000 {
+		t.Errorf("the owl's body is not cut out (alpha %d)", a)
+	}
+	_, _, _, a = img.At(0, 0).RGBA()
+	if a != 0 {
+		t.Errorf("outside the disc should be clear (alpha %d)", a)
+	}
+	_, _, _, a = img.At(22, 2).RGBA()
+	if a == 0 {
+		t.Errorf("the disc's rim is missing")
 	}
 }
