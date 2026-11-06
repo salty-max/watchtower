@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/logo.png" alt="Watchtower: a stone tower with a lit lantern" width="160"></p>
+<p align="center"><img src="assets/logo.png" alt="Watchtower: a gold lookout lantern with a teal watchfire" width="160"></p>
 
 # Watchtower
 

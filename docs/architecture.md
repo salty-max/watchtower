@@ -230,7 +230,7 @@ The app's icon is the painted logo (`assets/`) on macOS' icon grid:
 `scripts/icon.sh` makes `assets/app-icon.png` (1024 px, the `.icns`' source in
 `scripts/build.sh`) and `assets/app-icon-512.png` (embedded by `icon.go`, the
 Dock's). The menu-bar icon stays a status-coloured disc with a tower cut out
-(`icon.go`): the colour is the information, and the painted tower is mud at 16
+(`icon.go`): the colour is the information, and the painting loses its detail at 16
 to 22 px. The window's mark and favicon are `frontend/public/icon.png`, the 64 px
 export.
 
