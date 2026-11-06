@@ -12,3 +12,5 @@ node_modules/
 /assets/logo-256.png
 /assets/logo-64.png
 /assets/logo-32.png
+/frontend/dist-pwa/
+/frontend/.shots/

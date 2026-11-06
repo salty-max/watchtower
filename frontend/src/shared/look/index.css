@@ -1,0 +1,207 @@
+@import "tailwindcss" source(none);
+/* (only what the phone build and ui-sync.ts's stamp both read: the shared pages, the phone shell and its page; the Mac's own pages are scanned by its own css) */
+@source "..";
+@source "../../pwa";
+@source "../../../pwa";
+@import "@fontsource/cinzel/latin-700.css";
+/* (Inter's Latin subset only: the pages are English and French, and the rest would be a megabyte nobody loads) */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Watchtower's look, which is Ravenpost's own (frontend/src/index.css: the
+   tokens, the panel, the title and the buttons are copied from it, and a
+   change there is a change here): night stone and the game's gold, titles in
+   Cinzel, the rest in Inter, both bundled so the app works offline. This is
+   the one file both shells import; what only one shell needs (a window's
+   scroll, a phone's bottom bar) sits in that shell's own file. */
+@theme {
+  --color-night: #0b0c10;
+  --color-stone: #121319;
+  --color-stone-2: #181a21;
+  --color-stone-3: #21242d;
+  --color-edge: #2b2f3a;
+  --color-edge-gold: #5a4a2a;
+  --color-parchment: #ece3cf;
+  --color-dim: #a39b88;
+  --color-faint: #6f6a5e;
+  --color-gold: #f2c14e;
+  --color-gold-soft: #c9a227;
+  --color-ok: #6fd08c;
+  --color-blood: #e0634f;
+  --color-bnet: #148eff;
+
+  --font-display: "Cinzel", "Trajan Pro", Georgia, serif;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+@layer components {
+  /* A panel of dark stone with a gold hairline, the game's frames. */
+  .panel {
+    position: relative;
+    border: 1px solid var(--color-edge);
+    border-radius: 10px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--color-stone-2) 100%, white 2%), var(--color-stone));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.03),
+      inset 0 0 0 1px rgb(242 193 78 / 0.05),
+      0 10px 30px rgb(0 0 0 / 0.35);
+  }
+  .title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--color-gold);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    height: 2.1rem;
+    padding: 0 0.9rem;
+    border-radius: 7px;
+    border: 1px solid var(--color-edge);
+    background: linear-gradient(180deg, var(--color-stone-3), var(--color-stone-2));
+    color: var(--color-parchment);
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      filter 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--color-edge-gold);
+    filter: brightness(1.12);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+  }
+  .btn-gold {
+    border-color: #f6d27a;
+    background: linear-gradient(180deg, #f6d27a, #c9a227 60%, #a07a1c);
+    color: #22170a;
+    font-weight: 600;
+    text-shadow: 0 1px 0 rgb(255 240 200 / 0.35);
+    box-shadow: 0 0 18px rgb(242 193 78 / 0.15);
+  }
+  .btn-bnet {
+    border-color: #4aa8ff;
+    background: linear-gradient(180deg, #2e9bff, #0b6fd6);
+    color: white;
+    font-weight: 600;
+  }
+  .btn-ghost {
+    border-color: transparent;
+    background: transparent;
+    color: var(--color-dim);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.04);
+    color: var(--color-parchment);
+    border-color: transparent;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+
+  /* A table that is a list of two-line rows on a phone: the first cell is the line above, the others follow it with their labels. */
+  .tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  .tbl th {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-edge);
+    color: var(--color-faint);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: right;
+  }
+  .tbl td {
+    height: 36px;
+    padding: 6px 10px;
+    border-bottom: 1px solid rgb(255 255 255 / 0.05);
+    text-align: right;
+  }
+  .tbl th:first-child,
+  .tbl td:first-child {
+    text-align: left;
+  }
+  .tbl tr:last-child td {
+    border-bottom: 0;
+  }
+  @media (max-width: 639px) {
+    .tbl thead {
+      display: none;
+    }
+    .tbl tr {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px 16px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgb(255 255 255 / 0.05);
+    }
+    .tbl tr:last-child {
+      border-bottom: 0;
+    }
+    .tbl td {
+      height: auto;
+      padding: 0;
+      border: 0;
+      text-align: left;
+      font-size: 13px;
+    }
+    .tbl td:first-child {
+      flex-basis: 100%;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .tbl td[data-label]::before {
+      content: attr(data-label) " ";
+      color: var(--color-faint);
+    }
+    .btn,
+    .seg button {
+      min-height: 40px;
+    }
+  }
+}
+
+/* The page's words appearing. */
+.fade-in {
+  animation: fade-in 0.22s ease-out;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.pulse-dot {
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-in,
+  .pulse-dot {
+    animation: none;
+  }
+}
